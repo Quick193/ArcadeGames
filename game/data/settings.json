@@ -1,0 +1,15 @@
+{
+  "music_volume": 0.8,
+  "sfx_volume": 0.9,
+  "music_enabled": true,
+  "sfx_enabled": true,
+  "theme": "modern_dark",
+  "show_particles": true,
+  "show_bg_anim": true,
+  "show_fps": false,
+  "fps_cap": 60,
+  "show_ghost_piece": true,
+  "auto_clear_annotations": false,
+  "chess_show_hints": true,
+  "reset_on_start": false
+}

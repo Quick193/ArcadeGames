@@ -1,0 +1,108 @@
+{
+  "board": [
+    [
+      "r",
+      "n",
+      "b",
+      "q",
+      "k",
+      "b",
+      "n",
+      "r"
+    ],
+    [
+      "p",
+      null,
+      "p",
+      "p",
+      "p",
+      "p",
+      "p",
+      "p"
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      null,
+      "p",
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    [
+      null,
+      null,
+      null,
+      null,
+      "P",
+      null,
+      null,
+      null
+    ],
+    [
+      "P",
+      "P",
+      "P",
+      "P",
+      null,
+      "P",
+      "P",
+      "P"
+    ],
+    [
+      "R",
+      "N",
+      "B",
+      "Q",
+      "K",
+      "B",
+      "N",
+      "R"
+    ]
+  ],
+  "turn": true,
+  "castling": {
+    "K": true,
+    "Q": true,
+    "k": true,
+    "q": true
+  },
+  "ep": [
+    2,
+    1
+  ],
+  "history": [
+    "e3",
+    "b5"
+  ],
+  "cap_w": [],
+  "cap_b": [],
+  "mode": "ai",
+  "pcolor": "white",
+  "diff": "hard",
+  "timer_i": 0,
+  "white_ms": 0,
+  "black_ms": 0,
+  "status": "ongoing"
+}
