@@ -1,4 +1,4 @@
-"""games/pong.py — PongScene"""
+"""games/pong.py - PongScene"""
 import random, math, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_button, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -8,16 +8,16 @@ BALL_R = 8
 WIN_SCORE = 7
 
 AI_PARAMS = {
-    "easy":   {"speed": 4.5, "error": 38, "react": 0.35},
-    "medium": {"speed": 6.5, "error": 18, "react": 0.70},
-    "hard":   {"speed": 9.2, "error":  4, "react": 1.00},
+    "easy":   {"speed": 3.2, "error": 60, "react": 0.25},   # slow, high error, late reaction
+    "medium": {"speed": 5.8, "error": 22, "react": 0.55},
+    "hard":   {"speed": 10.5,"error":  2, "react": 0.95},   # near-perfect
 }
 
 class PongScene(BaseScene):
     GAME_ID = "pong"
 
     def on_enter(self):
-        self._phase = "mode"   # mode → difficulty → game
+        self._phase = "mode"   # mode > difficulty > game
         self._mode  = None
         self._diff  = None
         self._sel   = 0
@@ -117,7 +117,7 @@ class PongScene(BaseScene):
         for i, opt in enumerate(options):
             bx, by, bw, bh = (W-300)//2, 280+i*82, 300, 58
             draw_button(screen, (bx, by, bw, bh), opt, bf, i==self._sel, Theme.ACCENT_CYAN, self._time*60)
-        draw_footer_hint(screen, "↑↓ Select  •  Enter Confirm  •  Q Back", y_offset=26)
+        draw_footer_hint(screen, "^v Select  |  Enter Confirm  |  Q Back", y_offset=26)
 
     def _draw_game(self, screen):
         # Centre dashes
@@ -145,7 +145,7 @@ class PongScene(BaseScene):
         p2_label = "AI" if self._mode == "1p" else "P2"
         draw_text(screen, "P1", lf, Theme.TEXT_MUTED, W//2-55, 22)
         draw_text(screen, p2_label, lf, Theme.TEXT_MUTED, W//2+55, 22)
-        draw_footer_hint(screen, "↑↓ P1 Move  •  W/S P2 Move  •  P Pause  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "^v P1 Move  |  W/S P2 Move  |  P Pause  |  Q Menu", y_offset=26)
         if self._paused:
             from engine.ui import draw_pause_card
             draw_pause_card(screen)
@@ -159,8 +159,8 @@ class PongScene(BaseScene):
         draw_card(screen, (cx, cy, cw, ch))
         color = Theme.ACCENT_CYAN if self._winner == "P1" else Theme.ACCENT_PINK
         draw_text(screen, f"{self._winner} WINS!", FontCache.get("Segoe UI",42,bold=True), color, W//2, cy+56, align="center")
-        draw_text(screen, f"{self._p1s}  —  {self._p2s}", FontCache.get("Segoe UI",28,bold=True), Theme.TEXT_PRIMARY, W//2, cy+112, align="center")
-        draw_text(screen, "R Rematch  •  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, W//2, cy+168, align="center")
+        draw_text(screen, f"{self._p1s}  -  {self._p2s}", FontCache.get("Segoe UI",28,bold=True), Theme.TEXT_PRIMARY, W//2, cy+112, align="center")
+        draw_text(screen, "R Rematch  |  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, W//2, cy+168, align="center")
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN: return

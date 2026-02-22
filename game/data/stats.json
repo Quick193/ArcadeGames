@@ -83,13 +83,13 @@
       "extra": {}
     },
     "chess": {
-      "games_played": 6,
-      "games_won": 5,
-      "games_lost": 1,
+      "games_played": 12,
+      "games_won": 7,
+      "games_lost": 5,
       "best_score": 1,
-      "total_playtime": 564.0246372969356,
-      "current_streak": 2,
-      "best_streak": 3,
+      "total_playtime": 1837.912342081964,
+      "current_streak": 0,
+      "best_streak": 4,
       "top_scores": [
         {
           "score": 1,
@@ -127,15 +127,43 @@
           }
         },
         {
+          "score": 1,
+          "date": "2026-02-21T22:59:01",
+          "extra": {
+            "moves": 49
+          }
+        },
+        {
+          "score": 1,
+          "date": "2026-02-21T23:04:28",
+          "extra": {
+            "moves": 43
+          }
+        },
+        {
           "score": 0,
           "date": "2026-02-21T14:34:49",
           "extra": {
             "moves": 67
           }
+        },
+        {
+          "score": 0,
+          "date": "2026-02-21T23:55:23",
+          "extra": {
+            "moves": 86
+          }
+        },
+        {
+          "score": 0,
+          "date": "2026-02-21T23:55:31",
+          "extra": {
+            "moves": 86
+          }
         }
       ],
       "extra": {
-        "moves": 284
+        "moves": 692
       }
     },
     "breakout": {
@@ -204,14 +232,23 @@
       "extra": {}
     },
     "endless_metro_run": {
-      "games_played": 2,
+      "games_played": 3,
       "games_won": 0,
-      "games_lost": 2,
-      "best_score": 30,
-      "total_playtime": 21.607703290879726,
+      "games_lost": 3,
+      "best_score": 4260,
+      "total_playtime": 214.82722699898295,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
+        {
+          "score": 4260,
+          "date": "2026-02-21T23:09:59",
+          "extra": {
+            "difficulty": "Medium",
+            "distance": 36375,
+            "coins": 45
+          }
+        },
         {
           "score": 30,
           "date": "2026-02-20T22:38:25",
@@ -232,8 +269,8 @@
         }
       ],
       "extra": {
-        "distance": 2725,
-        "coins": 6
+        "distance": 39100,
+        "coins": 51
       }
     },
     "space_invaders": {
@@ -296,12 +333,12 @@
       "extra": {}
     },
     "connect4": {
-      "games_played": 5,
+      "games_played": 6,
       "games_won": 2,
-      "games_lost": 3,
+      "games_lost": 4,
       "best_score": 1,
-      "total_playtime": 45.366727586044,
-      "current_streak": 1,
+      "total_playtime": 86.27021137825213,
+      "current_streak": 0,
       "best_streak": 1,
       "top_scores": [
         {
@@ -328,13 +365,102 @@
           "score": 0,
           "date": "2026-02-21T16:08:19",
           "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-21T23:06:28",
+          "extra": {}
         }
       ],
       "extra": {}
+    },
+    "sudoku": {
+      "games_played": 4,
+      "games_won": 1,
+      "games_lost": 3,
+      "best_score": 717,
+      "total_playtime": 726.8140925024636,
+      "current_streak": 0,
+      "best_streak": 1,
+      "top_scores": [
+        {
+          "score": 717,
+          "date": "2026-02-22T11:45:10",
+          "extra": {
+            "difficulty": "Easy",
+            "mistakes": 0,
+            "hints": 0,
+            "time_s": 283
+          }
+        },
+        {
+          "score": 717,
+          "date": "2026-02-22T11:45:14",
+          "extra": {
+            "difficulty": "Easy",
+            "mistakes": 0,
+            "hints": 0,
+            "time_s": 283
+          }
+        },
+        {
+          "score": 621,
+          "date": "2026-02-22T00:55:15",
+          "extra": {
+            "difficulty": "Easy",
+            "mistakes": 3,
+            "hints": 0,
+            "time_s": 79
+          }
+        },
+        {
+          "score": 621,
+          "date": "2026-02-22T00:55:18",
+          "extra": {
+            "difficulty": "Easy",
+            "mistakes": 3,
+            "hints": 0,
+            "time_s": 79
+          }
+        }
+      ],
+      "extra": {
+        "mistakes": 6,
+        "hints": 0,
+        "time_s": 724
+      }
+    },
+    "asteroids": {
+      "games_played": 2,
+      "games_won": 0,
+      "games_lost": 2,
+      "best_score": 2570,
+      "total_playtime": 254.28048779186793,
+      "current_streak": 0,
+      "best_streak": 0,
+      "top_scores": [
+        {
+          "score": 2570,
+          "date": "2026-02-22T11:48:26",
+          "extra": {
+            "wave": 2
+          }
+        },
+        {
+          "score": 880,
+          "date": "2026-02-22T01:00:07",
+          "extra": {
+            "wave": 1
+          }
+        }
+      ],
+      "extra": {
+        "wave": 3
+      }
     }
   },
-  "global_playtime": 1475.7294420912394,
-  "total_games": 25,
+  "global_playtime": 3964.834734670911,
+  "total_games": 39,
   "first_play": "2026-02-20T21:38:07",
-  "last_play": "2026-02-21T16:08:28"
+  "last_play": "2026-02-22T11:48:26"
 }

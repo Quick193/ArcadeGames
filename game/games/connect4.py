@@ -1,4 +1,4 @@
-"""games/connect4.py — Connect4Scene"""
+"""games/connect4.py - Connect4Scene"""
 import random, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -70,18 +70,24 @@ def _winning_cells(grid, player):
 def _score_window(window, player):
     opp = 2 if player==1 else 1
     p = window.count(player); e = window.count(0); o = window.count(opp)
-    if p==4: return 100
-    if p==3 and e==1: return 5
-    if p==2 and e==2: return 2
-    if o==3 and e==1: return -4
+    if p==4: return 1000
+    if p==3 and e==1: return 12
+    if p==2 and e==2: return 3
+    if o==4: return -1000
+    if o==3 and e==1: return -20   # block opponent strongly
+    if o==2 and e==2: return -3
     return 0
 
 def _heuristic(grid, player):
     score = 0
     opp   = 2 if player==1 else 1
-    # Centre column preference
-    centre = [grid[r][COLS//2] for r in range(ROWS)]
-    score += centre.count(player) * 3
+    # Centre column preference — strongest positional bonus
+    for bonus_c, bonus in [(COLS//2, 6), (COLS//2-1, 3), (COLS//2+1, 3)]:
+        if 0 <= bonus_c < COLS:
+            col_vals = [grid[r][bonus_c] for r in range(ROWS)]
+            score += col_vals.count(player) * bonus
+            score -= col_vals.count(opp) * bonus
+
     for r in range(ROWS):
         for c in range(COLS-3):
             w = [grid[r][c+i] for i in range(4)]
@@ -103,15 +109,17 @@ def _heuristic(grid, player):
 def _minimax(grid, depth, alpha, beta, maximising, ai_player):
     human = 2 if ai_player==1 else 1
     valid = _valid_cols(grid)
+    if _check_win(grid, ai_player):  return None,  100000 + depth
+    if _check_win(grid, human):      return None, -100000 - depth
     if not valid or depth==0:
         return None, _heuristic(grid, ai_player)
-    if _check_win(grid, ai_player):  return None,  10000 + depth
-    if _check_win(grid, human):      return None, -10000 - depth
 
-    best_col = random.choice(valid)
+    # Column order: centre-out for better pruning
+    order = sorted(valid, key=lambda c: abs(c - COLS//2))
+    best_col = order[0]
     if maximising:
         best = -10**9
-        for c in valid:
+        for c in order:
             g2 = [row[:] for row in grid]
             _drop(g2, c, ai_player)
             _, score = _minimax(g2, depth-1, alpha, beta, False, ai_player)
@@ -121,7 +129,7 @@ def _minimax(grid, depth, alpha, beta, maximising, ai_player):
         return best_col, best
     else:
         best = 10**9
-        for c in valid:
+        for c in order:
             g2 = [row[:] for row in grid]
             _drop(g2, c, human)
             _, score = _minimax(g2, depth-1, alpha, beta, True, ai_player)
@@ -130,7 +138,8 @@ def _minimax(grid, depth, alpha, beta, maximising, ai_player):
             if alpha >= beta: break
         return best_col, best
 
-AI_DEPTH = {"easy":1, "medium":3, "hard":5}
+AI_DEPTH = {"easy": 1, "medium": 4, "hard": 6}
+AI_RAND  = {"easy": 0.45, "medium": 0.0, "hard": 0.0}  # easy sometimes plays random
 
 # ---------------------------------------------------------------------------
 # Scene
@@ -165,10 +174,16 @@ class Connect4Scene(BaseScene):
         self._session_t += dt
         if self._mode=="1p" and self._turn==2 and self._ai_pending:
             self._ai_pending = False
-            depth = AI_DEPTH.get(self._diff, 3)
-            col, _ = _minimax(self._grid, depth, -10**9, 10**9, True, 2)
-            if col is not None and col in _valid_cols(self._grid):
-                self._place(col)
+            depth = AI_DEPTH.get(self._diff, 4)
+            rand  = AI_RAND.get(self._diff, 0.0)
+            valid = _valid_cols(self._grid)
+            if valid:
+                if rand > 0 and random.random() < rand:
+                    col = random.choice(valid)
+                else:
+                    col, _ = _minimax(self._grid, depth, -10**9, 10**9, True, 2)
+                if col is not None and col in valid:
+                    self._place(col)
 
     def _place(self, col):
         if col not in _valid_cols(self._grid): return
@@ -223,7 +238,7 @@ class Connect4Scene(BaseScene):
             pygame.draw.rect(screen,bg,(bx,by,bw,bh),border_radius=10)
             pygame.draw.rect(screen,Theme.CARD_BORDER,(bx,by,bw,bh),1,border_radius=10)
             draw_text(screen,opt,bf,Theme.TEXT_PRIMARY if sel else Theme.TEXT_SECONDARY,bx+bw//2,by+bh//2,align="center")
-        draw_footer_hint(screen,"↑↓ Select  •  Enter Confirm  •  Q Back",y_offset=26)
+        draw_footer_hint(screen,"^v Select  |  Enter Confirm  |  Q Back",y_offset=26)
 
     def _draw_diff(self, screen):
         draw_text(screen,"Difficulty",FontCache.get("Segoe UI",46,bold=True),Theme.TEXT_PRIMARY,W//2,130,align="center")
@@ -236,7 +251,7 @@ class Connect4Scene(BaseScene):
             pygame.draw.rect(screen,bg,(bx,by,bw,bh),border_radius=10)
             pygame.draw.rect(screen,Theme.CARD_BORDER,(bx,by,bw,bh),1,border_radius=10)
             draw_text(screen,opt,bf,Theme.TEXT_PRIMARY if sel else Theme.TEXT_SECONDARY,bx+bw//2,by+bh//2,align="center")
-        draw_footer_hint(screen,"↑↓ Select  •  Enter Confirm  •  Q Back",y_offset=26)
+        draw_footer_hint(screen,"^v Select  |  Enter Confirm  |  Q Back",y_offset=26)
 
     def _draw_game(self, screen):
         # Hover cursor (column indicator)
@@ -282,7 +297,7 @@ class Connect4Scene(BaseScene):
             tn = "P1" if self._turn==1 else p2_name
             draw_text(screen,f"{tn}'s turn",FontCache.get("Segoe UI",14),tc,W//2,BOARD_Y+BOARD_H+18,align="center")
 
-        draw_footer_hint(screen,"←→ Move  •  Enter / Click Drop  •  R Restart  •  Q Menu",y_offset=26)
+        draw_footer_hint(screen,"<> Move  |  Enter / Click Drop  |  R Restart  |  Q Menu",y_offset=26)
         if self._winner or self._draw: self._draw_end(screen)
 
     def _draw_end(self, screen):
@@ -296,7 +311,7 @@ class Connect4Scene(BaseScene):
             name="P1" if self._winner==1 else p2_name
             color=P1_COLOR if self._winner==1 else P2_COLOR
             draw_text(screen,f"{name} WINS!",FontCache.get("Segoe UI",44,bold=True),color,W//2,cy+52,align="center")
-        draw_text(screen,"R Rematch  •  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+152,align="center")
+        draw_text(screen,"R Rematch  |  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+152,align="center")
 
     # ------------------------------------------------------------------
     # Input

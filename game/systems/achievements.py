@@ -5,12 +5,12 @@ AchievementSystem: Defines, tracks, unlocks, and persists achievements.
 
 Architecture
 ------------
-  • Achievements are defined in the ACHIEVEMENT_REGISTRY dict at the bottom
+  | Achievements are defined in the ACHIEVEMENT_REGISTRY dict at the bottom
     of this file.  Each entry is an AchievementDef dataclass.
-  • Unlock state (which IDs are unlocked + when) lives in data/achievements.json.
-  • Games call check_and_unlock(game_id, stats_snapshot) after each session.
+  | Unlock state (which IDs are unlocked + when) lives in data/achievements.json.
+  | Games call check_and_unlock(game_id, stats_snapshot) after each session.
     The system evaluates all relevant conditions and unlocks automatically.
-  • Newly unlocked achievements are added to a popup queue that the
+  | Newly unlocked achievements are added to a popup queue that the
     MainMenuScene / game scenes drain each frame to show animated toasts.
 
 Defining a new achievement
@@ -21,13 +21,13 @@ Defining a new achievement
         id          = "first_blood",
         name        = "First Blood",
         description = "Win your first game of any kind",
-        icon        = "🏆",
+        icon        = "WIN",
         color       = (255, 214, 102),
         game_id     = None,          # None = global (any game)
         condition   = lambda snap: snap.get("total_wins", 0) >= 1,
     )
 
-Achievement conditions receive a 'stats snapshot' dict — a flat dict of
+Achievement conditions receive a 'stats snapshot' dict - a flat dict of
 combined global + per-game stats passed in by the calling scene.
 
 Usage
@@ -45,13 +45,13 @@ Usage
         ...
     }
     newly_unlocked = ach.check_and_unlock(snap)
-    # → [AchievementDef, ...]  (list of newly unlocked this call)
+    # > [AchievementDef, ...]  (list of newly unlocked this call)
 
     # Check if already unlocked
-    ach.is_unlocked("tetris_first_clear")   # → True / False
+    ach.is_unlocked("tetris_first_clear")   # > True / False
 
     # Get all for display
-    ach.all_achievements()   # → list of (AchievementDef, unlocked_bool, date_or_None)
+    ach.all_achievements()   # > list of (AchievementDef, unlocked_bool, date_or_None)
 
 Achievements file: data/achievements.json
 """
@@ -118,47 +118,47 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "first_game": _def(
         "first_game", "Welcome to the Arcade",
         "Play your first game of anything",
-        "🎮", _C(99, 179, 237),
+        "CTR", _C(99, 179, 237),
         lambda s: s.get("total_games_played", 0) >= 1,
         pts=5,
     ),
     "ten_games": _def(
         "ten_games", "Getting Warmed Up",
         "Play 10 games total across all titles",
-        "🔥", _C(255, 159, 67),
+        "HOT", _C(255, 159, 67),
         lambda s: s.get("total_games_played", 0) >= 10,
     ),
     "hundred_games": _def(
         "hundred_games", "Arcade Regular",
         "Play 100 games total",
-        "🕹️", _C(171, 99, 250),
+        "100", _C(171, 99, 250),
         lambda s: s.get("total_games_played", 0) >= 100,
         pts=25,
     ),
     "first_win": _def(
         "first_win", "Winner Winner",
         "Win your first game",
-        "🏆", _C(255, 214, 102),
+        "WIN", _C(255, 214, 102),
         lambda s: s.get("total_wins", 0) >= 1,
         pts=5,
     ),
     "win_streak_5": _def(
         "win_streak_5", "On a Roll",
         "Win 5 games in a row (same game)",
-        "⚡", _C(79, 236, 255),
+        "ZAP", _C(79, 236, 255),
         lambda s: s.get("current_streak", 0) >= 5,
         pts=20,
     ),
     "one_hour": _def(
         "one_hour", "Time Flies",
         "Accumulate 1 hour of total playtime",
-        "⏱️", _C(92, 219, 149),
+        "CLK", _C(92, 219, 149),
         lambda s: s.get("total_playtime", 0) >= 3600,
     ),
     "night_owl": _def(
         "night_owl", "Night Owl",
         "Play every game at least once",
-        "🦉", _C(171, 99, 250),
+        "OWL", _C(171, 99, 250),
         lambda s: s.get("games_tried", 0) >= 13,
         secret=True, pts=30,
     ),
@@ -167,35 +167,35 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "tetris_first": _def(
         "tetris_first", "Stacker",
         "Complete your first Tetris game",
-        "🧱", _C(79, 236, 255),
+        "BLK", _C(79, 236, 255),
         lambda s: s.get("games_played", 0) >= 1,
         game_id="tetris",
     ),
     "tetris_1000": _def(
         "tetris_1000", "Getting Started",
         "Score 1,000 points in Tetris",
-        "📈", _C(99, 179, 237),
+        "UP+", _C(99, 179, 237),
         lambda s: s.get("score", 0) >= 1000,
         game_id="tetris",
     ),
     "tetris_10000": _def(
         "tetris_10000", "Line Clearer",
         "Score 10,000 points in Tetris",
-        "💎", _C(171, 99, 250),
+        "GEM", _C(171, 99, 250),
         lambda s: s.get("score", 0) >= 10000,
         game_id="tetris", pts=20,
     ),
     "tetris_tetris": _def(
         "tetris_tetris", "TETRIS!",
         "Clear 4 lines at once",
-        "✨", _C(255, 214, 102),
+        "***", _C(255, 214, 102),
         lambda s: s.get("tetris_clears", 0) >= 1,
         game_id="tetris", pts=15,
     ),
     "tetris_100_lines": _def(
         "tetris_100_lines", "Century",
         "Clear 100 total lines in Tetris",
-        "💯", _C(92, 219, 149),
+        "100", _C(92, 219, 149),
         lambda s: s.get("total_lines", 0) >= 100,
         game_id="tetris", pts=25,
     ),
@@ -204,21 +204,21 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "snake_first": _def(
         "snake_first", "Slithering Start",
         "Play your first game of Snake",
-        "🐍", _C(92, 219, 149),
+        "SNK", _C(92, 219, 149),
         lambda s: s.get("games_played", 0) >= 1,
         game_id="snake",
     ),
     "snake_10": _def(
         "snake_10", "Growing Up",
         "Reach a length of 10 in Snake",
-        "📏", _C(92, 219, 149),
+        "LEN", _C(92, 219, 149),
         lambda s: s.get("score", 0) >= 10,
         game_id="snake",
     ),
     "snake_50": _def(
         "snake_50", "Sssserious",
         "Reach a length of 50 in Snake",
-        "🐉", _C(255, 214, 102),
+        "DRG", _C(255, 214, 102),
         lambda s: s.get("score", 0) >= 50,
         game_id="snake", pts=20,
     ),
@@ -227,21 +227,21 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "pong_first_win": _def(
         "pong_first_win", "Paddle Up",
         "Win your first Pong match",
-        "🏓", _C(250, 99, 180),
+        "PNG", _C(250, 99, 180),
         lambda s: s.get("won", False),
         game_id="pong",
     ),
     "pong_shutout": _def(
         "pong_shutout", "Shutout",
         "Win a Pong match without conceding a point",
-        "🛡️", _C(79, 236, 255),
+        "SHD", _C(79, 236, 255),
         lambda s: s.get("won", False) and s.get("opponent_score", 1) == 0,
         game_id="pong", pts=25,
     ),
     "pong_5_wins": _def(
         "pong_5_wins", "Pong Master",
         "Win 5 Pong matches",
-        "🥇", _C(255, 214, 102),
+        "1ST", _C(255, 214, 102),
         lambda s: s.get("games_won", 0) >= 5,
         game_id="pong", pts=15,
     ),
@@ -250,21 +250,21 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "flappy_first": _def(
         "flappy_first", "First Flap",
         "Pass your first pipe in Flappy Bird",
-        "🐦", _C(255, 214, 102),
+        "FLY", _C(255, 214, 102),
         lambda s: s.get("score", 0) >= 1,
         game_id="flappy",
     ),
     "flappy_10": _def(
         "flappy_10", "Sky Pilot",
         "Pass 10 pipes in one run",
-        "✈️", _C(79, 236, 255),
+        "JET", _C(79, 236, 255),
         lambda s: s.get("score", 0) >= 10,
         game_id="flappy", pts=15,
     ),
     "flappy_25": _def(
         "flappy_25", "Bird God",
         "Pass 25 pipes in one run",
-        "🦅", _C(255, 159, 67),
+        "ACE", _C(255, 159, 67),
         lambda s: s.get("score", 0) >= 25,
         game_id="flappy", pts=30,
     ),
@@ -273,21 +273,21 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "chess_first": _def(
         "chess_first", "Opening Move",
         "Play your first game of Chess",
-        "♟️", _C(171, 99, 250),
+        "CHK", _C(171, 99, 250),
         lambda s: s.get("games_played", 0) >= 1,
         game_id="chess",
     ),
     "chess_win": _def(
         "chess_win", "Checkmate!",
         "Win a game of Chess",
-        "♔", _C(255, 214, 102),
+        "KNG", _C(255, 214, 102),
         lambda s: s.get("won", False),
         game_id="chess", pts=15,
     ),
     "chess_beat_hard": _def(
         "chess_beat_hard", "Grandmaster",
         "Beat the AI on Hard difficulty",
-        "🧠", _C(79, 236, 255),
+        "PRO", _C(79, 236, 255),
         lambda s: s.get("won", False) and s.get("difficulty") == "hard",
         game_id="chess", pts=50, secret=True,
     ),
@@ -296,14 +296,14 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "breakout_first": _def(
         "breakout_first", "Brick By Brick",
         "Play your first Breakout game",
-        "🧱", _C(255, 159, 67),
+        "BLK", _C(255, 159, 67),
         lambda s: s.get("games_played", 0) >= 1,
         game_id="breakout",
     ),
     "breakout_clear": _def(
         "breakout_clear", "Clean Sweep",
         "Clear all bricks in a Breakout level",
-        "🧹", _C(92, 219, 149),
+        "CLR", _C(92, 219, 149),
         lambda s: s.get("won", False),
         game_id="breakout", pts=20,
     ),
@@ -312,14 +312,14 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "memory_first": _def(
         "memory_first", "Total Recall",
         "Complete your first Memory Match game",
-        "🃏", _C(92, 219, 149),
+        "CRD", _C(92, 219, 149),
         lambda s: s.get("won", False),
         game_id="memory_match",
     ),
     "memory_no_mistake": _def(
         "memory_no_mistake", "Perfect Memory",
         "Complete Memory Match without a single mismatch",
-        "🧩", _C(255, 214, 102),
+        "PZL", _C(255, 214, 102),
         lambda s: s.get("mismatches", 1) == 0 and s.get("won", False),
         game_id="memory_match", pts=30, secret=True,
     ),
@@ -328,14 +328,14 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "space_first": _def(
         "space_first", "Defender",
         "Survive your first wave in Space Invaders",
-        "🚀", _C(79, 236, 255),
+        "RKT", _C(79, 236, 255),
         lambda s: s.get("wave", 0) >= 1,
         game_id="space_invaders",
     ),
     "space_wave5": _def(
         "space_wave5", "Space Ace",
         "Reach wave 5 in Space Invaders",
-        "🌟", _C(255, 214, 102),
+        "STR", _C(255, 214, 102),
         lambda s: s.get("wave", 0) >= 5,
         game_id="space_invaders", pts=20,
     ),
@@ -344,14 +344,14 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "2048_first": _def(
         "2048_first", "Starter Tile",
         "Play your first game of 2048",
-        "🔢", _C(255, 159, 67),
+        "NUM", _C(255, 159, 67),
         lambda s: s.get("games_played", 0) >= 1,
         game_id="game_2048",
     ),
     "2048_tile": _def(
         "2048_tile", "Two Thousand!",
         "Reach the 2048 tile",
-        "🏅", _C(255, 214, 102),
+        "MDL", _C(255, 214, 102),
         lambda s: s.get("best_tile", 0) >= 2048,
         game_id="game_2048", pts=30,
     ),
@@ -360,7 +360,7 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "mine_first": _def(
         "mine_first", "Lucky",
         "Clear your first Minesweeper board",
-        "💣", _C(255, 107, 107),
+        "BMB", _C(255, 107, 107),
         lambda s: s.get("won", False),
         game_id="minesweeper",
     ),
@@ -369,7 +369,7 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "c4_first": _def(
         "c4_first", "Four in a Row",
         "Win your first Connect 4 game",
-        "🔴", _C(255, 107, 107),
+        "C-4", _C(255, 107, 107),
         lambda s: s.get("won", False),
         game_id="connect4",
     ),
@@ -378,7 +378,7 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "neon_first": _def(
         "neon_first", "Dasher",
         "Complete a level in Neon Blob Dash",
-        "💫", _C(79, 236, 255),
+        "DSH", _C(79, 236, 255),
         lambda s: s.get("won", False),
         game_id="neon_blob_dash",
     ),
@@ -387,16 +387,118 @@ ACHIEVEMENT_REGISTRY: dict[str, AchievementDef] = {
     "metro_100": _def(
         "metro_100", "Hundred Meter",
         "Run 100 metres in Endless Metro Run",
-        "🏃", _C(99, 179, 237),
+        "RUN", _C(99, 179, 237),
         lambda s: s.get("distance", 0) >= 100,
         game_id="endless_metro_run",
     ),
     "metro_1000": _def(
         "metro_1000", "Marathon",
         "Run 1,000 metres in Endless Metro Run",
-        "🏅", _C(255, 214, 102),
+        "MDL", _C(255, 214, 102),
         lambda s: s.get("distance", 0) >= 1000,
         game_id="endless_metro_run", pts=25,
+    ),
+
+    # ---- Sudoku --------------------------------------------------------
+    "sudoku_first": _def(
+        "sudoku_first", "First Fill",
+        "Solve your first Sudoku puzzle",
+        "SUD", _C(171, 99, 250),
+        lambda s: s.get("won", False),
+        game_id="sudoku",
+    ),
+    "sudoku_no_mistakes": _def(
+        "sudoku_no_mistakes", "Perfectionist",
+        "Solve a Sudoku with zero mistakes",
+        "ZRO", _C(92, 219, 149),
+        lambda s: s.get("won", False) and s.get("mistakes", 1) == 0,
+        game_id="sudoku", pts=20,
+    ),
+    "sudoku_no_hints": _def(
+        "sudoku_no_hints", "No Peeking",
+        "Solve a Sudoku without using any hints",
+        "EYE", _C(255, 214, 102),
+        lambda s: s.get("won", False) and s.get("hints", 1) == 0,
+        game_id="sudoku", pts=15,
+    ),
+    "sudoku_hard": _def(
+        "sudoku_hard", "Logic Master",
+        "Solve a Hard difficulty Sudoku",
+        "PRO", _C(79, 236, 255),
+        lambda s: s.get("won", False) and s.get("difficulty") == "Hard",
+        game_id="sudoku", pts=30,
+    ),
+    "sudoku_speed": _def(
+        "sudoku_speed", "Speed Solver",
+        "Solve an Easy Sudoku in under 3 minutes",
+        "ZAP", _C(255, 159, 67),
+        lambda s: (s.get("won", False)
+                   and s.get("difficulty") == "Easy"
+                   and s.get("time_s", 9999) < 180),
+        game_id="sudoku", pts=25, secret=True,
+    ),
+    "sudoku_flawless": _def(
+        "sudoku_flawless", "Flawless",
+        "Solve a Hard Sudoku with no mistakes and no hints",
+        "GEM", _C(255, 214, 102),
+        lambda s: (s.get("won", False)
+                   and s.get("difficulty") == "Hard"
+                   and s.get("mistakes", 1) == 0
+                   and s.get("hints", 1) == 0),
+        game_id="sudoku", pts=60, secret=True,
+    ),
+
+    # ---- Asteroids -----------------------------------------------------
+    "asteroids_first": _def(
+        "asteroids_first", "Into the Void",
+        "Play your first game of Asteroids",
+        "AST", _C(99, 179, 237),
+        lambda s: s.get("games_played", 0) >= 1,
+        game_id="asteroids",
+    ),
+    "asteroids_wave3": _def(
+        "asteroids_wave3", "Rock Crusher",
+        "Reach wave 3 in Asteroids",
+        "RCK", _C(92, 219, 149),
+        lambda s: s.get("wave", 0) >= 3,
+        game_id="asteroids", pts=10,
+    ),
+    "asteroids_wave5": _def(
+        "asteroids_wave5", "Ace Pilot",
+        "Reach wave 5 in Asteroids",
+        "ACE", _C(255, 214, 102),
+        lambda s: s.get("wave", 0) >= 5,
+        game_id="asteroids", pts=25,
+    ),
+    "asteroids_wave10": _def(
+        "asteroids_wave10", "Star Destroyer",
+        "Reach wave 10 in Asteroids",
+        "STR", _C(79, 236, 255),
+        lambda s: s.get("wave", 0) >= 10,
+        game_id="asteroids", pts=50, secret=True,
+    ),
+    "asteroids_score5k": _def(
+        "asteroids_score5k", "Five Thousand",
+        "Score 5,000 points in a single Asteroids run",
+        "5KP", _C(255, 159, 67),
+        lambda s: s.get("score", 0) >= 5000,
+        game_id="asteroids", pts=20,
+    ),
+    "asteroids_score20k": _def(
+        "asteroids_score20k", "Void Walker",
+        "Score 20,000 points in a single Asteroids run",
+        "20K", _C(171, 99, 250),
+        lambda s: s.get("score", 0) >= 20000,
+        game_id="asteroids", pts=40, secret=True,
+    ),
+
+    # ---- Cross-game milestone ------------------------------------------
+    "all_rounder": _def(
+        "all_rounder", "All-Rounder",
+        "Play at least one game in 10 different titles",
+        "10X", _C(255, 214, 102),
+        lambda s: s.get("distinct_games_played", 0) >= 10,
+        pts=35, secret=True,
     ),
 }
 
@@ -442,7 +544,7 @@ class AchievementSystem:
                     self._unlock(ach)
                     newly.append(ach)
             except Exception:
-                pass  # Bad condition — never crash
+                pass  # Bad condition - never crash
 
         if newly:
             self._save()

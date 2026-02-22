@@ -123,6 +123,20 @@ GAME_REGISTRY = [
         "color": lambda: Theme.ACCENT_PINK,
         "scene": "games.connect4:Connect4Scene",
     },
+    {
+        "id":    "sudoku",
+        "name":  "Sudoku",
+        "desc":  "Fill the 9x9 grid",
+        "color": lambda: Theme.ACCENT_PURPLE,
+        "scene": "games.sudoku:SudokuScene",
+    },
+    {
+        "id":    "asteroids",
+        "name":  "Asteroids",
+        "desc":  "Destroy all rocks",
+        "color": lambda: Theme.ACCENT_CYAN,
+        "scene": "games.asteroids:AsteroidsScene",
+    },
 ]
 
 
@@ -368,6 +382,73 @@ def _draw_game_icon(surface: pygame.Surface,
                 cy2 = y + row * (size // rows_c) + size // (rows_c * 2)
                 c = Theme.ACCENT_RED if col == 2 and row < 2 else Theme.ACCENT_YELLOW
                 pygame.draw.circle(surface, c, (cx2, cy2), size // 10)
+
+    elif name == "Sudoku":
+        # Mini 3×3 grid with a few digits
+        cell = size // 3
+        font = FontCache.get("Segoe UI", cell // 2 + 1, bold=True)
+        digits = [
+            (0, 0, "9"), (1, 0, ""),  (2, 0, "3"),
+            (0, 1, ""),  (1, 1, "5"), (2, 1, ""),
+            (0, 2, "1"), (2, 2, "7"), (1, 2, ""),
+        ]
+        for col, row, d in digits:
+            rx2 = x + col * cell
+            ry2 = y + row * cell
+            pygame.draw.rect(surface, Theme.CARD_BG,
+                             (rx2 + 1, ry2 + 1, cell - 2, cell - 2))
+            if d:
+                # Pulse colour on the centre "5"
+                c = Theme.ACCENT_PURPLE if d == "5" else Theme.TEXT_SECONDARY
+                if d == "5":
+                    pulse = abs(math.sin(t * 3)) * 0.4 + 0.6
+                    c = tuple(min(255, int(v * pulse)) for v in Theme.ACCENT_PURPLE[:3])
+                draw_text(surface, d, font, c,
+                          rx2 + cell // 2, ry2 + cell // 2 - 2, align="center")
+        # Grid lines
+        for i in range(4):
+            thick = 2 if i % 3 == 0 else 1
+            lc = Theme.TEXT_SECONDARY if i % 3 == 0 else Theme.CARD_BORDER
+            pygame.draw.line(surface, lc, (x + i*cell, y), (x + i*cell, y + size), thick)
+            pygame.draw.line(surface, lc, (x, y + i*cell), (x + size, y + i*cell), thick)
+
+    elif name == "Asteroids":
+        # Spinning asteroid polygon + small ship triangle
+        # Asteroid
+        ast_r = size // 3
+        n_pts  = 7
+        ast_pts = []
+        for i in range(n_pts):
+            ang = t * 40 + i * 360 / n_pts   # slow spin
+            rad2 = math.radians(ang)
+            jitter = [0.75, 1.0, 0.85, 1.1, 0.8, 1.05, 0.9][i] * ast_r
+            ast_pts.append((
+                cx - 4 + math.cos(rad2) * jitter,
+                cy + 4 + math.sin(rad2) * jitter,
+            ))
+        pygame.draw.polygon(surface, (55, 60, 75), ast_pts)
+        pygame.draw.lines(surface, Theme.TEXT_SECONDARY, True, ast_pts, 1)
+        # Ship (top-right, pointing up-right)
+        ship_cx = x + size - 8
+        ship_cy = y + 8
+        ship_ang = -45.0
+        srad = math.radians(ship_ang)
+        ssz  = size // 5
+        nose  = (ship_cx + math.cos(srad) * ssz,        ship_cy + math.sin(srad) * ssz)
+        left  = (ship_cx + math.cos(srad + 2.5) * ssz * 0.7,
+                 ship_cy + math.sin(srad + 2.5) * ssz * 0.7)
+        right = (ship_cx + math.cos(srad - 2.5) * ssz * 0.7,
+                 ship_cy + math.sin(srad - 2.5) * ssz * 0.7)
+        back  = (ship_cx + math.cos(srad + math.pi) * ssz * 0.4,
+                 ship_cy + math.sin(srad + math.pi) * ssz * 0.4)
+        pygame.draw.polygon(surface, (20, 30, 50), [nose, left, back, right])
+        pygame.draw.lines(surface, Theme.ACCENT_CYAN, True,
+                          [nose, left, back, right], 1)
+        # Bullet streak
+        bprog = (t * 1.2) % 1.0
+        bx1 = int(ship_cx + (cx - ship_cx) * bprog - 4)
+        by1 = int(ship_cy + (cy - ship_cy) * bprog - 4)
+        pygame.draw.circle(surface, Theme.ACCENT_YELLOW, (bx1, by1), 2)
 
 
 # ---------------------------------------------------------------------------

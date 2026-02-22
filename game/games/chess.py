@@ -31,6 +31,7 @@ New additions
 """
 
 from copy import deepcopy
+import math
 import random
 import pygame
 
@@ -290,7 +291,9 @@ _PST = {
 
 
 def _evaluate(board):
+    """Static material + positional evaluation. Returns score in pawn-units (white positive)."""
     score = 0
+    white_mobility = 0; black_mobility = 0
     for r in range(8):
         for c in range(8):
             p = board[r][c]
@@ -298,9 +301,52 @@ def _evaluate(board):
             pt = p.upper()
             v   = _MAT.get(pt, 0)
             pst = _PST.get(pt, [0]*64)
-            if _iw(p): score += v + pst[r*8+c]
-            else:      score -= v + pst[(7-r)*8+c]
+            if _iw(p):
+                score += v + pst[r*8+c]
+                white_mobility += len(_pseudo_moves(board, r, c))
+            else:
+                score -= v + pst[(7-r)*8+c]
+                black_mobility += len(_pseudo_moves(board, r, c))
+    # Mobility bonus (5 cp per extra move)
+    score += (white_mobility - black_mobility) * 5
     return score / 100.0
+
+
+def _pseudo_moves(board, r, c):
+    """Fast pseudo-legal move count for a piece (used in eval mobility)."""
+    p = board[r][c]
+    if not p: return []
+    pt = p.upper(); white = _iw(p); dirs = []
+    moves = []
+    if pt == 'P':
+        dr = -1 if white else 1
+        if 0 <= r+dr < 8 and not board[r+dr][c]: moves.append((r+dr,c))
+        for dc in (-1,1):
+            if 0<=r+dr<8 and 0<=c+dc<8 and board[r+dr][c+dc] and _iw(board[r+dr][c+dc])!=white:
+                moves.append((r+dr,c+dc))
+    elif pt == 'N':
+        for dr,dc in [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]:
+            nr,nc=r+dr,c+dc
+            if 0<=nr<8 and 0<=nc<8 and (not board[nr][nc] or _iw(board[nr][nc])!=white):
+                moves.append((nr,nc))
+    elif pt in ('B','R','Q'):
+        if pt in ('B','Q'): dirs += [(-1,-1),(-1,1),(1,-1),(1,1)]
+        if pt in ('R','Q'): dirs += [(-1,0),(1,0),(0,-1),(0,1)]
+        for dr,dc in dirs:
+            nr,nc=r+dr,c+dc
+            while 0<=nr<8 and 0<=nc<8:
+                if board[nr][nc]:
+                    if _iw(board[nr][nc])!=white: moves.append((nr,nc))
+                    break
+                moves.append((nr,nc)); nr+=dr; nc+=dc
+    elif pt == 'K':
+        for dr in (-1,0,1):
+            for dc in (-1,0,1):
+                if dr==dc==0: continue
+                nr,nc=r+dr,c+dc
+                if 0<=nr<8 and 0<=nc<8 and (not board[nr][nc] or _iw(board[nr][nc])!=white):
+                    moves.append((nr,nc))
+    return moves
 
 
 def _minimax(board, depth, alpha, beta, maximising, castling, ep):
@@ -313,15 +359,21 @@ def _minimax(board, depth, alpha, beta, maximising, castling, ep):
             if p and _iw(p) == maximising:
                 for m in _legal(board, r, c, castling, ep):
                     t = board[m[0]][m[1]]
-                    score = 0
+                    sort_score = 0
                     if t:
                         vv = {'p':1,'n':3,'b':3,'r':5,'q':9,'k':0}.get(t.lower(), 0)
                         av = {'p':1,'n':2,'b':2,'r':3,'q':4,'k':5}.get(p.lower(), 0)
-                        score = 100 + vv*10 - av
-                    moves.append(((r,c), m, score))
+                        sort_score = 100 + vv*10 - av
+                    moves.append(((r,c), m, sort_score))
 
     if not moves:
-        return (-10000 - depth) if _in_check(board, maximising) else 0
+        # No moves: checkmate or stalemate.
+        # Checkmate: the CURRENT player (maximising) has no escape.
+        # If maximising=True  → White is mated  → very bad for White  → return large NEGATIVE
+        # If maximising=False → Black is mated  → very good for White → return large POSITIVE
+        if _in_check(board, maximising):
+            return -(10000 + depth) if maximising else (10000 + depth)
+        return 0  # stalemate
 
     moves.sort(key=lambda x: x[2], reverse=True)
 
@@ -343,26 +395,76 @@ def _minimax(board, depth, alpha, beta, maximising, castling, ep):
         return best
 
 
-def _ai_best_move(board, castling, ep, difficulty, ai_white):
-    depth = {'easy':1, 'medium':2, 'hard':3}.get(difficulty, 2)
-    best_val = float('-inf'); best = None
-    alpha = float('-inf'); beta = float('inf')
+def _position_eval(board, castling, ep, depth=3):
+    """Run minimax at given depth from White's POV. Returns (score, mate_in).
+    score in pawn-units; mate_in = +N (white mates in N), -N (black), None.
 
-    moves = []
+    Minimax returns +(10000+depth_remaining) when Black is mated (White wins),
+    -(10000+depth_remaining) when White is mated (Black wins).
+    """
+    raw = _minimax(board, depth, float('-inf'), float('inf'), True, castling, ep)
+    MATE_THRESH = 5000   # anything beyond ±5000 is a mate score, not material
+    if abs(raw) >= MATE_THRESH:
+        # depth_remaining at checkmate node
+        depth_remaining = int(abs(raw)) - 10000
+        # Half-moves from root to the checkmate = depth - depth_remaining
+        half_moves = depth - depth_remaining
+        moves_to_mate = max(1, math.ceil(half_moves / 2))
+        mate_in = moves_to_mate if raw > 0 else -moves_to_mate
+        bar_score = 20.0 if raw > 0 else -20.0   # peg bar to extreme
+        return bar_score, mate_in
+    return raw, None
+
+
+def _ai_best_move(board, castling, ep, difficulty, ai_white):
+    """Return best move for given side. Higher depth = stronger play."""
+    depth = {'easy': 2, 'medium': 3, 'hard': 4}.get(difficulty, 2)
+    rand_chance = {'easy': 0.35, 'medium': 0.08, 'hard': 0.0}.get(difficulty, 0.0)
+
+    all_moves = []
     for r in range(8):
         for c in range(8):
             p = board[r][c]
             if p and _iw(p) == ai_white:
                 for m in _legal(board, r, c, castling, ep):
-                    moves.append(((r,c), m))
-    random.shuffle(moves)
+                    all_moves.append(((r,c), m))
 
-    for (fr,fc),(tr,tc) in moves:
+    if not all_moves:
+        return None
+
+    # Easy: occasionally pick a random legal move
+    if rand_chance > 0 and random.random() < rand_chance:
+        return random.choice(all_moves)
+
+    random.shuffle(all_moves)   # shuffle for variety among equal moves
+    best_val = float('-inf') if ai_white else float('inf')
+    best = None
+    alpha = float('-inf'); beta = float('inf')
+
+    # Move ordering: captures first (faster alpha-beta pruning)
+    def move_score(mv):
+        (fr,fc),(tr,tc) = mv
+        t = board[tr][tc]
+        if t:
+            vv = {'p':1,'n':3,'b':3,'r':5,'q':9}.get(t.lower(), 0)
+            av = {'p':1,'n':2,'b':2,'r':3,'q':4}.get(board[fr][fc].lower(), 0)
+            return 100 + vv*10 - av
+        return 0
+    all_moves.sort(key=move_score, reverse=True)
+
+    for (fr,fc),(tr,tc) in all_moves:
         nb,_,_ = _apply(board, fr, fc, tr, tc, ep)
         val = _minimax(nb, depth-1, alpha, beta, not ai_white, castling, None)
-        if best is None or val > best_val:
-            best_val = val; best = ((fr,fc),(tr,tc))
-        alpha = max(alpha, best_val)
+        if ai_white:
+            if best is None or val > best_val:
+                best_val = val; best = ((fr,fc),(tr,tc))
+            alpha = max(alpha, best_val)
+        else:
+            # AI is black, minimise
+            if best is None or val < best_val:
+                best_val = val; best = ((fr,fc),(tr,tc))
+            beta = min(beta, best_val)
+        if beta <= alpha: break
 
     return best
 
@@ -457,26 +559,52 @@ def _draw_piece(surface, pt, white, x, y, size):
 # Annotation helpers
 # ─────────────────────────────────────────────────────────────
 
-def _draw_arrow(screen, fx, fy, tx, ty, color):
-    """Draw a filled arrow from (fx,fy) to (tx,ty)."""
+def _draw_arrow_pixels(screen, fx, fy, tx, ty, color, width=8):
+    """Draw a straight filled arrow from pixel (fx,fy) to (tx,ty)."""
     import math as _math
     dx = tx - fx; dy = ty - fy
     dist = _math.hypot(dx, dy)
     if dist < 4: return
-    ux = dx/dist; uy = dy/dist   # unit vector
-    # Shorten shaft so arrowhead fits
-    tx2 = tx - ux*14; ty2 = ty - uy*14
-    # Draw shaft
+    ux = dx/dist; uy = dy/dist
+    tx2 = tx - ux*14; ty2 = ty - uy*14   # shorten for arrowhead
     surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-    pygame.draw.line(surf, color, (int(fx), int(fy)), (int(tx2), int(ty2)), 8)
-    # Arrowhead
+    pygame.draw.line(surf, color, (int(fx), int(fy)), (int(tx2), int(ty2)), width)
+    # Arrowhead triangle
     pw = 14; ph = 18
-    lx = tx - ux*ph + uy*pw//2
-    ly = ty - uy*ph - ux*pw//2
-    rx = tx - ux*ph - uy*pw//2
-    ry = ty - uy*ph + ux*pw//2
+    lx = tx - ux*ph + uy*pw/2
+    ly = ty - uy*ph - ux*pw/2
+    rx = tx - ux*ph - uy*pw/2
+    ry = ty - uy*ph + ux*pw/2
     pygame.draw.polygon(surf, color, [(int(tx),int(ty)),(int(lx),int(ly)),(int(rx),int(ry))])
     screen.blit(surf, (0,0))
+
+
+def _draw_board_arrow(screen, from_sq, to_sq, flip, color, SQ_size, BX, BY):
+    """Draw an annotation arrow between two board squares.
+    Knight moves get an L-shaped path; others are straight."""
+    fr, fc = from_sq; tr, tc = to_sq
+    dr = tr - fr; dc = tc - fc
+
+    def sq_center(br, bc):
+        sr = 7-br if flip else br
+        sc = 7-bc if flip else bc
+        return BX + sc*SQ_size + SQ_size//2, BY + sr*SQ_size + SQ_size//2
+
+    fx, fy = sq_center(fr, fc)
+    tx, ty = sq_center(tr, tc)
+
+    # Detect knight move: |dr|+|dc|==3 with |dr|!=0 and |dc|!=0
+    if abs(dr) + abs(dc) == 3 and abs(dr) in (1, 2) and abs(dc) in (1, 2):
+        # Draw L-shaped: first horizontal segment, then vertical (or vice-versa)
+        # Elbow is at the horizontal corner: same rank as dest, same file as source
+        ex, ey = sq_center(fr, tc)   # elbow: row=from, col=to
+        # Draw two arrow segments; arrowhead only on final segment
+        surf = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+        pygame.draw.line(surf, color, (int(fx), int(fy)), (int(ex), int(ey)), 8)
+        screen.blit(surf, (0,0))
+        _draw_arrow_pixels(screen, ex, ey, tx, ty, color)
+    else:
+        _draw_arrow_pixels(screen, fx, fy, tx, ty, color)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -584,6 +712,7 @@ class ChessScene(BaseScene):
         self._eval_target  = 0.0
         self._eval_visual  = 0.0
         self._mate_in      = None   # None or int (positive = white mates)
+        self._eval_dirty   = True   # recompute eval next frame
         # AI flag
         self._ai_pending   = False
         # Session timer (for stats)
@@ -621,6 +750,7 @@ class ChessScene(BaseScene):
         self._selected  = None; self._legal_sq = []
         self._last_move = None; self._ai_pending = False
         self._game_status = _status(self._board, self._turn, self._castling, self._ep)
+        self._eval_dirty = True
 
     # ── Update ─────────────────────────────────────────────────
 
@@ -644,16 +774,11 @@ class ChessScene(BaseScene):
                 self._finish()
                 return
 
-        # Smooth eval bar — detect mate-in-N
-        raw = _evaluate(self._board)
-        if abs(raw) >= 100:   # minimax returns ±(10000+depth) for mate
-            # Mate detected: extract distance
-            dist = int(round(abs(raw) - 9999))   # plies remaining
-            moves_to_mate = max(1, (dist + 1) // 2)
-            self._mate_in = moves_to_mate if raw > 0 else -moves_to_mate
-            self._eval_target = 20.0 if raw > 0 else -20.0  # peg bar to extreme
-        else:
-            self._mate_in    = None
+        # Smooth eval bar — recompute only after each move (dirty flag)
+        if getattr(self, '_eval_dirty', True):
+            self._eval_dirty = False
+            raw, mate = _position_eval(self._board, self._castling, self._ep, depth=2)
+            self._mate_in     = mate
             self._eval_target = raw
         self._eval_visual += (self._eval_target - self._eval_visual) * min(1.0, dt * 4)
 
@@ -777,19 +902,13 @@ class ChessScene(BaseScene):
         for (ar, ac), col in self._circles:
             asr = 7-ar if flip else ar
             asc = 7-ac if flip else ac
-            cx2 = BOARD_X + asc*SQ + SQ//2
-            cy2 = BOARD_Y + asr*SQ + SQ//2
             ann = pygame.Surface((SQ, SQ), pygame.SRCALPHA)
             pygame.draw.circle(ann, (*col[:3], 180), (SQ//2, SQ//2), SQ//2-4, 4)
             screen.blit(ann, (BOARD_X+asc*SQ, BOARD_Y+asr*SQ))
 
-        # Annotation: arrows
-        for (fr2, fc2), (tr2, tc2), col in self._arrows:
-            fsr = 7-fr2 if flip else fr2; fsc = 7-fc2 if flip else fc2
-            tsr = 7-tr2 if flip else tr2; tsc = 7-tc2 if flip else tc2
-            fx = BOARD_X + fsc*SQ + SQ//2;  fy = BOARD_Y + fsr*SQ + SQ//2
-            tx = BOARD_X + tsc*SQ + SQ//2;  ty = BOARD_Y + tsr*SQ + SQ//2
-            _draw_arrow(screen, fx, fy, tx, ty, (*col[:3], 180))
+        # Annotation: arrows (board-coord-aware, L-shape for knights)
+        for from_sq, to_sq, col in self._arrows:
+            _draw_board_arrow(screen, from_sq, to_sq, flip, (*col[:3], 180), SQ, BOARD_X, BOARD_Y)
 
         # In-progress RMB drag: show ghost arrow
         if self._rclick_start:
@@ -798,13 +917,9 @@ class ChessScene(BaseScene):
                 asc2=(mx2-BOARD_X)//SQ; asr2=(my2-BOARD_Y)//SQ
                 ttr, ttc = to_board(asr2, asc2)
                 sfr, sfc = self._rclick_start
-                sfsr = 7-sfr if flip else sfr; sfsc = 7-sfc if flip else sfc
-                tfsr = 7-ttr if flip else ttr; tfsc = 7-ttc if flip else ttc
                 if (sfr, sfc) != (ttr, ttc):
-                    _draw_arrow(screen,
-                        BOARD_X+sfsc*SQ+SQ//2, BOARD_Y+sfsr*SQ+SQ//2,
-                        BOARD_X+tfsc*SQ+SQ//2, BOARD_Y+tfsr*SQ+SQ//2,
-                        (*self._rclick_color[:3], 120))
+                    _draw_board_arrow(screen, (sfr,sfc), (ttr,ttc), flip,
+                                      (*self._rclick_color[:3], 100), SQ, BOARD_X, BOARD_Y)
 
         # Coordinate labels
         cf    = FontCache.get("Segoe UI", 11, bold=True)
@@ -833,7 +948,7 @@ class ChessScene(BaseScene):
             self._draw_clocks(screen, flip)
 
         draw_footer_hint(screen,
-            "Drag pieces | RMB annotate | Ctrl+Z Undo | Ctrl+S Save | Ctrl+L Load | N New | Q Menu",
+            "Drag pieces | RMB annotate (Shift=green Ctrl=blue) | C clear | Ctrl+Z Undo | Ctrl+S Save | Ctrl+L Load | N New | Q Menu",
             y_offset=26)
 
     def _draw_clocks(self, screen, flip):
@@ -871,16 +986,41 @@ class ChessScene(BaseScene):
                   FontCache.get("Segoe UI",24,bold=True), tc, sx+14, sy+28)
         sy += 70
 
-        # Captured pieces
-        draw_card(screen, (sx, sy, SIDE_W, 68))
+        # Captured pieces — show per-type counts in a compact grid
+        draw_card(screen, (sx, sy, SIDE_W, 78))
         draw_text(screen, "CAPTURED", FontCache.get("Segoe UI",9,bold=True),
                   Theme.TEXT_MUTED, sx+14, sy+8)
-        pf = FontCache.get("Segoe UI",13)
-        wc = ''.join(sorted(p.upper() for p in self._cap_w))
-        bc = ''.join(sorted(p.upper() for p in self._cap_b))
-        draw_text(screen, f"[W]  {wc or '-'}", pf, Theme.TEXT_SECONDARY, sx+14, sy+24)
-        draw_text(screen, f"[B]  {bc or '-'}", pf, Theme.TEXT_SECONDARY, sx+14, sy+44)
-        sy += 78
+
+        cf  = FontCache.get("Segoe UI", 11, bold=True)
+        cf2 = FontCache.get("Segoe UI", 10)
+
+        # White pieces captured by Black (shown in top row, dim white)
+        from collections import Counter
+        white_counts = Counter(p.upper() for p in self._cap_w)  # white pieces taken
+        black_counts = Counter(p.upper() for p in self._cap_b)  # black pieces taken
+
+        piece_order = ['Q','R','B','N','P']
+        piece_names = {'Q':'Q','R':'R','B':'B','N':'N','P':'P'}
+
+        for row_i, (counts, label, col) in enumerate([
+            (white_counts, "W lost", (200,200,220)),
+            (black_counts, "B lost", (160,120,80)),
+        ]):
+            rx = sx + 14
+            ry = sy + 22 + row_i * 26
+            draw_text(screen, label + ":", cf2, Theme.TEXT_MUTED, rx, ry)
+            rx += 42
+            if not counts:
+                draw_text(screen, "none", cf2, Theme.TEXT_MUTED, rx, ry)
+            else:
+                for pt in piece_order:
+                    n = counts.get(pt, 0)
+                    if n:
+                        txt = f"{pt}{n}" if n > 1 else pt
+                        draw_text(screen, txt, cf, col, rx, ry)
+                        rx += cf.size(txt)[0] + 5
+
+        sy += 88
 
         # Move history
         hist_h = BOARD_Y + BOARD_SZ - sy - 48
@@ -990,9 +1130,12 @@ class ChessScene(BaseScene):
 
         nb, cap, special = _apply(self._board, fr, fc, tr, tc, self._ep, promo)
 
-        # Track captures
+        # Track captures — white piece captured → goes in _cap_w; black → _cap_b
         if cap:
-            (_iw(cap) and self._cap_w or self._cap_b).append(cap)
+            if _iw(cap):
+                self._cap_w.append(cap)
+            else:
+                self._cap_b.append(cap)
 
         # Update castling rights
         if p and p.upper()=='K':
@@ -1017,6 +1160,8 @@ class ChessScene(BaseScene):
         self._legal_sq  = []
         # Clear annotations after each move (like chess.com)
         self._arrows.clear(); self._circles.clear()
+        # Recompute eval bar next frame
+        self._eval_dirty = True
 
         # Game status after move
         gs = _status(self._board, self._turn, self._castling, self._ep)
@@ -1065,10 +1210,17 @@ class ChessScene(BaseScene):
         k = event.key
         ctrl = bool(pygame.key.get_mods() & pygame.KMOD_CTRL)
 
+        # Escape / Q — in game: clear annotations first, then exit on second press
         if k in (pygame.K_q, pygame.K_ESCAPE):
-            if self._phase == "game": self.engine.pop_scene()
-            elif self._phase == "mode": self.engine.pop_scene()
-            else: self._phase="mode"; self._sel=0
+            if self._phase == "game":
+                if (self._arrows or self._circles) and k == pygame.K_ESCAPE:
+                    self._arrows.clear(); self._circles.clear()
+                else:
+                    self.engine.pop_scene()
+            elif self._phase == "mode":
+                self.engine.pop_scene()
+            else:
+                self._phase = "mode"; self._sel = 0
             return
 
         if self._phase == "mode":
@@ -1120,7 +1272,7 @@ class ChessScene(BaseScene):
                     self._save_msg = ("Game loaded!", 2.0)
                 else:
                     self._save_msg = ("No save found.", 2.0)
-            elif k==pygame.K_ESCAPE or k==pygame.K_DELETE:
+            elif k in (pygame.K_c, pygame.K_DELETE):
                 # Clear all annotations
                 self._arrows.clear(); self._circles.clear()
 

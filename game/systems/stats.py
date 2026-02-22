@@ -4,11 +4,11 @@ systems/stats.py
 StatsTracker: Records and persists per-game and global gameplay statistics.
 
 Every game calls into this system to record outcomes.  The tracker stores:
-  • Best score per game
-  • Games played / won / lost per game
-  • Total playtime (seconds) per game and globally
-  • Current and longest win streaks per game
-  • Game-specific extra stats (e.g. Tetris lines cleared, Chess captures)
+  | Best score per game
+  | Games played / won / lost per game
+  | Total playtime (seconds) per game and globally
+  | Current and longest win streaks per game
+  | Game-specific extra stats (e.g. Tetris lines cleared, Chess captures)
 
 All data is persisted to data/stats.json.
 
@@ -23,12 +23,12 @@ Usage
                   extra={"lines": 32, "level": 8})
 
     # Read stats
-    best = t.best_score("tetris")       # → 4200
-    played = t.games_played("tetris")   # → 1
-    playtime = t.total_playtime()       # → 180.0 (seconds, all games)
+    best = t.best_score("tetris")       # > 4200
+    played = t.games_played("tetris")   # > 1
+    playtime = t.total_playtime()       # > 180.0 (seconds, all games)
 
     # Leaderboard-style top scores
-    top = t.top_scores("tetris", n=5)   # → [{"score":4200, "date":"..."}]
+    top = t.top_scores("tetris", n=5)   # > [{"score":4200, "date":"..."}]
 
 Stats file: data/stats.json
 """
@@ -46,7 +46,7 @@ SAVE_PATH = os.path.join(DATA_DIR, "stats.json")
 # Maximum number of top-score entries to keep per game
 MAX_TOP_SCORES = 10
 
-# Known game IDs — new ones are accepted dynamically (plugin support)
+# Known game IDs - new ones are accepted dynamically (plugin support)
 KNOWN_GAMES = [
     "tetris", "snake", "pong", "flappy", "chess",
     "breakout", "memory_match", "neon_blob_dash",
@@ -78,7 +78,7 @@ class StatsTracker:
     def __init__(self, path: str = SAVE_PATH) -> None:
         self._path = path
         self._data: dict[str, Any] = {
-            "games":          {},   # game_id → _empty_game_stats()
+            "games":          {},   # game_id > _empty_game_stats()
             "global_playtime": 0.0,
             "total_games":    0,
             "first_play":     None,
@@ -103,11 +103,11 @@ class StatsTracker:
 
         Parameters
         ----------
-        game_id  : str   — e.g. "tetris"
-        score    : int   — final score (0 if not applicable)
-        won      : bool  — whether the player won
-        duration : float — session duration in seconds
-        extra    : dict  — game-specific stats (lines cleared, captures, etc.)
+        game_id  : str   - e.g. "tetris"
+        score    : int   - final score (0 if not applicable)
+        won      : bool  - whether the player won
+        duration : float - session duration in seconds
+        extra    : dict  - game-specific stats (lines cleared, captures, etc.)
 
         Returns
         -------
@@ -209,7 +209,7 @@ class StatsTracker:
         return self._data["global_playtime"]
 
     def top_scores(self, game_id: str, n: int = MAX_TOP_SCORES) -> list[dict]:
-        """Return up to *n* top score entries, sorted high→low."""
+        """Return up to *n* top score entries, sorted high>low."""
         return self._ensure_game(game_id)["top_scores"][:n]
 
     def extra_stat(self, game_id: str, key: str, default: Any = 0) -> Any:
@@ -228,12 +228,17 @@ class StatsTracker:
         total_won = sum(
             gs["games_won"] for gs in self._data["games"].values()
         )
+        distinct = sum(
+            1 for gs in self._data["games"].values()
+            if gs["games_played"] > 0
+        )
         return {
-            "total_games":     total_played,
-            "total_wins":      total_won,
-            "global_playtime": self._data["global_playtime"],
-            "first_play":      self._data["first_play"],
-            "last_play":       self._data["last_play"],
+            "total_games":          total_played,
+            "total_wins":           total_won,
+            "distinct_games_played": distinct,
+            "global_playtime":      self._data["global_playtime"],
+            "first_play":           self._data["first_play"],
+            "last_play":            self._data["last_play"],
         }
 
     def reset_game(self, game_id: str) -> None:

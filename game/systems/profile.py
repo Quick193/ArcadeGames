@@ -4,14 +4,14 @@ systems/profile.py
 PlayerProfile: The player's identity and aggregated stats view.
 
 PlayerProfile wraps StatsTracker and adds:
-  • Display name
-  • Total playtime formatted as "3h 42m"
-  • Favourite game (most played)
-  • Overall win rate across all games
-  • Per-game best score access
+  | Display name
+  | Total playtime formatted as "3h 42m"
+  | Favourite game (most played)
+  | Overall win rate across all games
+  | Per-game best score access
 
 The profile is the source of truth for the profile screen UI.
-It does NOT duplicate stats storage — it reads from StatsTracker.
+It does NOT duplicate stats storage - it reads from StatsTracker.
 
 Usage
 -----
@@ -46,7 +46,7 @@ KNOWN_GAMES = [
     "tetris", "snake", "pong", "flappy", "chess",
     "breakout", "memory_match", "neon_blob_dash",
     "endless_metro_run", "space_invaders", "game_2048",
-    "minesweeper", "connect4",
+    "minesweeper", "connect4", "sudoku", "asteroids",
 ]
 
 # Human-readable game names for the profile screen
@@ -64,6 +64,8 @@ GAME_DISPLAY_NAMES = {
     "game_2048":        "2048",
     "minesweeper":      "Minesweeper",
     "connect4":         "Connect 4",
+    "sudoku":           "Sudoku",
+    "asteroids":        "Asteroids",
 }
 
 
@@ -103,7 +105,7 @@ class PlayerProfile:
         self._save()
 
     # ------------------------------------------------------------------
-    # Derived stats (live — reads from StatsTracker each time)
+    # Derived stats (live - reads from StatsTracker each time)
     # ------------------------------------------------------------------
 
     @property
@@ -160,7 +162,7 @@ class PlayerProfile:
     def favourite_game_name(self) -> str:
         gid = self.favourite_game
         if gid is None:
-            return "—"
+            return "-"
         return GAME_DISPLAY_NAMES.get(gid, gid.replace("_", " ").title())
 
     def best_score(self, game_id: str) -> int:

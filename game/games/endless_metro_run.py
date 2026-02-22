@@ -1,5 +1,5 @@
 """
-games/endless_metro_run.py  —  EndlessMetroRunScene  (Phase 9)
+games/endless_metro_run.py  -  EndlessMetroRunScene  (Phase 9)
 ==============================================================
 Full port of endless_platformer_game() from games.py.
 
@@ -159,14 +159,15 @@ class EndlessMetroRunScene(BaseScene):
         self._coin_cd  = 0.9
         self._powerup_cd = 6.2
 
-        # Initial platform + coin
+        # Initial platform + coin — large safe ground to start
         self._platforms = [
-            pygame.Rect(0, GROUND_Y, 420, H - GROUND_Y),
-            pygame.Rect(520, GROUND_Y, 280, H - GROUND_Y),
+            pygame.Rect(0, GROUND_Y, 500, H - GROUND_Y),
+            pygame.Rect(560, GROUND_Y, 340, H - GROUND_Y),
         ]
-        self._coin_list = [{"x": 620.0, "y": float(GROUND_Y - 86), "alive": True}]
+        self._coin_list = [{"x": 650.0, "y": float(GROUND_Y - 86), "alive": True}]
         self._safe_lock_t = SAFE_LOCK_T
-        self._next_spawn_x = 920.0
+        self._next_spawn_x = 900.0
+        self._consec_elevated = 0
 
         self._phase = "game"
         self._session_t = 0.0
@@ -244,6 +245,8 @@ class EndlessMetroRunScene(BaseScene):
                     for e in self._enemies:
                         e["rect"].x -= si; e["min_x"] -= applied; e["max_x"] -= applied
                     for sh in self._shots:     sh["x"] -= applied
+                    # CRITICAL: keep spawn cursor in sync with scrolling world
+                    self._next_spawn_x -= applied
                     if applied > 0:
                         self._dist += applied
                         self._ground_scroll = (self._ground_scroll + applied) % 60
@@ -496,26 +499,77 @@ class EndlessMetroRunScene(BaseScene):
         self._powerups.append({"x": float(x), "y": float(y), "type": pt, "alive": True})
 
     def _spawn_chunk(self):
-        gap = random.randint(self._d["gap_min"], self._d["gap_max"])
+        """Spawn the next platform segment. Guarantees the player can always reach it.
+
+        Rules:
+        - Gaps are small enough to jump across (gap_min..gap_max, clamped to safe range)
+        - Ground platforms appear at least 65% of the time
+        - Elevated platforms are always 'steppable': within one jump of ground or nearby platform
+        - If last 2 platforms were elevated, force a ground platform
+        - Minimum ground platform width 240 to allow landing room
+        """
+        d = self._d
+
+        # Alternate between ground and elevated, with bias toward ground
+        force_ground = getattr(self, '_consec_elevated', 0) >= 2
+
+        gap = random.randint(d["gap_min"], min(d["gap_max"], 130))  # cap gap for safety
         x   = self._next_spawn_x + gap
-        if random.random() < 0.72:
-            y = GROUND_Y; w = random.randint(230, 430); h = H - y
+
+        # Decide platform type
+        choose_ground = force_ground or (random.random() < 0.65)
+
+        if choose_ground:
+            y = GROUND_Y
+            w = random.randint(240, 420)
+            h = H - y
+            self._consec_elevated = 0
         else:
-            ty = GROUND_Y - random.choice([70, 100, 130])
-            y  = max(GROUND_Y-140, min(self._last_spawn_y+55, max(self._last_spawn_y-55, ty)))
-            w  = random.randint(190, 320); h = 20
+            # Elevated — pick a height reachable in one jump from ground or prev platform
+            # Max jump height ≈ jump_power² / (2*gravity) in pixels at 60fps
+            jp = abs(d["jump_power"])
+            grav = d["gravity"]
+            max_rise_px = int((jp * jp) / (2.0 * grav))  # ≈ 195 px for easy
+            max_rise_px = min(max_rise_px, 155)           # cap for safety
+
+            prev_y = self._last_spawn_y
+            if prev_y == GROUND_Y:
+                # Jump from ground: can reach up to max_rise_px above ground
+                min_elev_y = GROUND_Y - max_rise_px
+                max_elev_y = GROUND_Y - 55
+            else:
+                # Jump from elevated: similar range relative to that platform
+                min_elev_y = max(GROUND_Y - max_rise_px, prev_y - 120)
+                max_elev_y = min(GROUND_Y - 40, prev_y + 80)
+
+            min_elev_y = max(min_elev_y, GROUND_Y - 150)
+            max_elev_y = max(max_elev_y, min_elev_y + 10)
+
+            y = random.randint(int(min_elev_y), int(max_elev_y))
+            w = random.randint(180, 300)
+            h = 20
+            self._consec_elevated = getattr(self, '_consec_elevated', 0) + 1
+
         seg = pygame.Rect(int(x), int(y), int(w), int(h))
         self._platforms.append(seg)
-        if y == GROUND_Y and random.random() < self._d["spike_chance"] and w > 190:
-            sx = random.randint(seg.x+35, seg.right-75)
-            self._spikes.append(pygame.Rect(sx, GROUND_Y-18, random.randint(36,68), 18))
-        if y < GROUND_Y and w > 190 and random.random() < self._d["enemy_chance"]:
-            ex = random.randint(seg.x+26, seg.right-62)
+
+        # Spikes only on ground platforms, not too close to edges
+        if y == GROUND_Y and w > 240 and random.random() < d["spike_chance"]:
+            sw = random.randint(28, 52)
+            sx = random.randint(seg.x + 50, seg.right - sw - 50)
+            if sx + sw <= seg.right - 20:
+                self._spikes.append(pygame.Rect(sx, GROUND_Y - 18, sw, 18))
+
+        # Enemies only on elevated platforms with enough room
+        if y < GROUND_Y and w > 200 and random.random() < d["enemy_chance"]:
+            ex = random.randint(seg.x + 26, seg.right - 56)
             self._enemies.append({
-                "rect": pygame.Rect(ex, y-30, 30, 30),
-                "min_x": float(seg.x+12), "max_x": float(seg.right-42),
-                "dir": random.choice([-1,1]), "speed": random.uniform(1.3,2.2)
+                "rect": pygame.Rect(ex, y - 30, 30, 30),
+                "min_x": float(seg.x + 12), "max_x": float(seg.right - 42),
+                "dir": random.choice([-1, 1]),
+                "speed": random.uniform(1.2, 2.0),
             })
+
         self._next_spawn_x = float(seg.right)
         self._last_spawn_y = y
 
@@ -615,7 +669,7 @@ class EndlessMetroRunScene(BaseScene):
         for i, d in enumerate(DIFFICULTIES):
             draw_button(screen, ((W-360)//2, 240+i*82, 360, 62), d["name"],
                         bf, i==self._sel, Theme.ACCENT_CYAN, self._anim_t*60)
-        draw_footer_hint(screen, "↑↓ Select  •  Enter Start  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "^v Select  |  Enter Start  |  Q Menu", y_offset=26)
 
     def _draw_game(self, screen):
         # Scanline lines for atmosphere
@@ -739,7 +793,7 @@ class EndlessMetroRunScene(BaseScene):
                   FontCache.get("Segoe UI",12), Theme.TEXT_SECONDARY, 28, 58)
 
         draw_footer_hint(screen,
-            "Space/↑ Jump  •  Shift Run  •  F/Ctrl Shoot  •  R Restart  •  Q Menu",
+            "Space/^ Jump  |  Shift Run  |  F/Ctrl Shoot  |  R Restart  |  Q Menu",
             y_offset=26)
 
         # Game over overlay
@@ -755,7 +809,7 @@ class EndlessMetroRunScene(BaseScene):
                 draw_text(screen, "NEW BEST!",
                           FontCache.get("Segoe UI",16,bold=True), Theme.ACCENT_YELLOW,
                           W//2, H//2+52, align="center")
-            draw_text(screen, "R Restart  •  Q Menu",
+            draw_text(screen, "R Restart  |  Q Menu",
                       FontCache.get("Segoe UI",14), Theme.TEXT_MUTED,
                       W//2, H//2+82, align="center")
 
