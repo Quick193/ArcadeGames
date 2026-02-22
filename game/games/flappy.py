@@ -1,4 +1,4 @@
-"""games/flappy.py — FlappyScene"""
+"""games/flappy.py - FlappyScene"""
 import random, math, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_button, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -86,7 +86,7 @@ class FlappyScene(BaseScene):
         bf   = FontCache.get("Segoe UI", 22)
         for i, opt in enumerate(opts):
             draw_button(screen, ((W-300)//2, 280+i*82, 300, 58), opt, bf, i==self._sel, Theme.ACCENT_YELLOW, self._time*60)
-        draw_footer_hint(screen, "↑↓ Select  •  Enter Play  •  Q Back", y_offset=26)
+        draw_footer_hint(screen, "^v Select  |  Enter Play  |  Q Back", y_offset=26)
 
     def _draw_game(self, screen):
         p = self._p
@@ -125,7 +125,7 @@ class FlappyScene(BaseScene):
         draw_card(screen, (16, 16, 130, 56))
         draw_text(screen, "SCORE", FontCache.get("Segoe UI",11,bold=True), Theme.TEXT_MUTED, 32, 22)
         draw_text(screen, str(self._score), FontCache.get("Segoe UI",22,bold=True), Theme.ACCENT_YELLOW, 32, 38)
-        draw_footer_hint(screen, "Space Flap  •  P Pause  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "Space Flap  |  P Pause  |  Q Menu", y_offset=26)
         if self._paused:
             from engine.ui import draw_pause_card; draw_pause_card(screen)
         elif self._dead:
@@ -139,8 +139,8 @@ class FlappyScene(BaseScene):
         draw_text(screen, "CRASHED!", FontCache.get("Segoe UI",44,bold=True), Theme.ACCENT_RED, W//2, cy+52, align="center")
         draw_text(screen, f"Score: {self._score}", FontCache.get("Segoe UI",26,bold=True), Theme.TEXT_PRIMARY, W//2, cy+110, align="center")
         if self._new_best:
-            draw_text(screen, "✦  NEW BEST  ✦", FontCache.get("Segoe UI",13,bold=True), Theme.ACCENT_YELLOW, W//2, cy+148, align="center")
-        draw_text(screen, "R Restart  •  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, W//2, cy+196, align="center")
+            draw_text(screen, "** NEW BEST **", FontCache.get("Segoe UI",13,bold=True), Theme.ACCENT_YELLOW, W//2, cy+148, align="center")
+        draw_text(screen, "R Restart  |  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, W//2, cy+196, align="center")
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN: return

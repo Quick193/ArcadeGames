@@ -1,4 +1,4 @@
-"""games/space_invaders.py — SpaceInvadersScene"""
+"""games/space_invaders.py - SpaceInvadersScene"""
 import random, math, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -9,20 +9,37 @@ BULLET_SPD = 600  # px/s
 ENEMY_SPD_BASE = 60
 SHIP_SPD = 340
 
+def _draw_lives(screen, lives, x, y):
+    """Draw small heart shapes for lives display."""
+    for i in range(lives):
+        hx = x + i * 22
+        hy = y
+        r = 5
+        pygame.draw.circle(screen, (255, 80, 80), (hx - r//2, hy - 2), r)
+        pygame.draw.circle(screen, (255, 80, 80), (hx + r//2, hy - 2), r)
+        pygame.draw.polygon(screen, (255, 80, 80), [(hx - r, hy), (hx + r, hy), (hx, hy + r + 1)])
+
+
 def _spawn_wave(wave):
     invaders = []
     rows, cols = min(4, 2+wave//2), min(10, 6+wave)
+    col_step = INV_W + 14
+    grid_w = cols * col_step - 14
+    start_x = (W - grid_w) // 2          # centre the grid horizontally
     for r in range(rows):
         for c in range(cols):
             hp = 1 + (1 if wave > 3 and r == 0 else 0)
             invaders.append({
-                "rect": pygame.Rect(100 + c*(INV_W+14), 80 + r*(INV_H+14), INV_W, INV_H),
+                "rect": pygame.Rect(start_x + c*col_step, 80 + r*(INV_H+14), INV_W, INV_H),
                 "hp": hp,
             })
     return invaders
 
 def _make_shields():
-    return [pygame.Rect(x, 520, 95, 32) for x in [170, 355, 540, 725]]
+    shield_w, gap = 95, 80
+    total = 4 * shield_w + 3 * gap        # 380 + 240 = 620
+    start_x = (W - total) // 2           # centred on 1280: 330
+    return [pygame.Rect(start_x + i*(shield_w+gap), 540, shield_w, 28) for i in range(4)]
 
 class SpaceInvadersScene(BaseScene):
     GAME_ID = "space_invaders"
@@ -206,9 +223,9 @@ class SpaceInvadersScene(BaseScene):
         draw_card(screen, (16,14,340,52))
         hf = FontCache.get("Segoe UI",17,bold=True)
         draw_text(screen, f"Score: {self._score}", hf, Theme.ACCENT_CYAN, 32, 32)
-        draw_text(screen, f"{'♥'*self._lives}", hf, Theme.ACCENT_RED, 188, 32)
+        _draw_lives(screen, self._lives, 175, 32)
         draw_text(screen, f"Wave: {self._wave}", hf, Theme.ACCENT_YELLOW, 268, 32)
-        draw_footer_hint(screen, "A/D Move  •  Space Shoot  •  P Pause  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "A/D Move  |  Space Shoot  |  P Pause  |  Q Menu", y_offset=26)
         if self._paused:
             from engine.ui import draw_pause_card; draw_pause_card(screen)
         elif self._dead: self._draw_gameover(screen)
@@ -220,8 +237,8 @@ class SpaceInvadersScene(BaseScene):
         draw_text(screen,"GAME OVER",FontCache.get("Segoe UI",44,bold=True),Theme.ACCENT_RED,W//2,cy+52,align="center")
         draw_text(screen,f"Score: {self._score}   Wave: {self._wave}",FontCache.get("Segoe UI",22,bold=True),Theme.TEXT_PRIMARY,W//2,cy+108,align="center")
         if self._new_best:
-            draw_text(screen,"✦  NEW BEST  ✦",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
-        draw_text(screen,"R Restart  •  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+196,align="center")
+            draw_text(screen,"** NEW BEST **",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
+        draw_text(screen,"R Restart  |  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+196,align="center")
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN: return

@@ -1,4 +1,4 @@
-"""games/snake.py — SnakeScene"""
+"""games/snake.py - SnakeScene"""
 import math, random, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH, SCREEN_HEIGHT
@@ -112,7 +112,7 @@ class SnakeScene(BaseScene):
         draw_card(screen, (184, 16, 160, 56))
         draw_text(screen, "BEST", sf, Theme.TEXT_MUTED, 200, 22)
         draw_text(screen, str(best), vf, Theme.ACCENT_CYAN, 200, 38)
-        draw_footer_hint(screen, "Arrows Move  •  G Grid  •  P Pause  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "Arrows Move  |  G Grid  |  P Pause  |  Q Menu", y_offset=26)
         if self._paused: self._draw_pause(screen)
         elif self._dead: self._draw_gameover(screen)
 
@@ -129,8 +129,8 @@ class SnakeScene(BaseScene):
         draw_text(screen, "GAME OVER", FontCache.get("Segoe UI",44,bold=True), Theme.ACCENT_RED, w//2, cy+52, align="center")
         draw_text(screen, f"{self._score}", FontCache.get("Segoe UI",28,bold=True), Theme.TEXT_PRIMARY, w//2, cy+110, align="center")
         if self._new_best:
-            draw_text(screen, "✦  NEW BEST  ✦", FontCache.get("Segoe UI",13,bold=True), Theme.ACCENT_YELLOW, w//2, cy+148, align="center")
-        draw_text(screen, "R Restart  •  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, w//2, cy+196, align="center")
+            draw_text(screen, "** NEW BEST **", FontCache.get("Segoe UI",13,bold=True), Theme.ACCENT_YELLOW, w//2, cy+148, align="center")
+        draw_text(screen, "R Restart  |  Q Menu", FontCache.get("Segoe UI",13), Theme.TEXT_MUTED, w//2, cy+196, align="center")
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN: return

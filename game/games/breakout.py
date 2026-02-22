@@ -1,4 +1,4 @@
-"""games/breakout.py — BreakoutScene"""
+"""games/breakout.py - BreakoutScene"""
 import random, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -36,6 +36,17 @@ def _build_bricks(level):
 def _reset_ball(level):
     spd = 5.2 + (level-1)*0.45
     return float(W//2), float(PAD_Y-22), random.choice([-1,1])*spd, -spd
+
+def _draw_lives(screen, lives, x, y):
+    """Draw small heart shapes for lives display."""
+    for i in range(lives):
+        hx = x + i * 22
+        hy = y
+        r = 5
+        pygame.draw.circle(screen, (255, 80, 80), (hx - r//2, hy - 2), r)
+        pygame.draw.circle(screen, (255, 80, 80), (hx + r//2, hy - 2), r)
+        pygame.draw.polygon(screen, (255, 80, 80), [(hx - r, hy), (hx + r, hy), (hx, hy + r + 1)])
+
 
 class BreakoutScene(BaseScene):
     GAME_ID = "breakout"
@@ -120,7 +131,7 @@ class BreakoutScene(BaseScene):
         draw_card(screen, (hx, 52, hw, 50))
         hf = FontCache.get("Segoe UI",18,bold=True)
         draw_text(screen, f"Score: {self._score}", hf, Theme.ACCENT_CYAN, hx+24, 69)
-        draw_text(screen, f"Lives: {'♥'*self._lives}", hf, Theme.ACCENT_RED, W//2-50, 69)
+        _draw_lives(screen, self._lives, W//2-50, 69)
         draw_text(screen, f"Level: {self._level}", hf, Theme.ACCENT_YELLOW, hx+hw-120, 69)
         for b in self._bricks:
             c = b["color"] if b["hp"]==1 else tuple(max(0,v-60) for v in b["color"])
@@ -129,7 +140,7 @@ class BreakoutScene(BaseScene):
         pygame.draw.rect(screen, Theme.ACCENT_PURPLE, (int(self._pad_x),PAD_Y,PAD_W,PAD_H), border_radius=8)
         pygame.draw.rect(screen, Theme.TEXT_PRIMARY,  (int(self._pad_x),PAD_Y,PAD_W,PAD_H), 1, border_radius=8)
         pygame.draw.circle(screen, Theme.TEXT_PRIMARY, (int(self._bx),int(self._by)), BALL_R)
-        draw_footer_hint(screen, "A/D Move  •  P Pause  •  R Restart  •  Q Menu", y_offset=26)
+        draw_footer_hint(screen, "A/D Move  |  P Pause  |  R Restart  |  Q Menu", y_offset=26)
         if self._paused:
             from engine.ui import draw_pause_card; draw_pause_card(screen)
         elif self._won or self._dead:
@@ -144,8 +155,8 @@ class BreakoutScene(BaseScene):
         draw_text(screen, title, FontCache.get("Segoe UI",44,bold=True), color, W//2, cy+52, align="center")
         draw_text(screen, f"Score: {self._score}", FontCache.get("Segoe UI",24,bold=True), Theme.TEXT_PRIMARY, W//2, cy+110, align="center")
         if self._new_best:
-            draw_text(screen,"✦  NEW BEST  ✦",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
-        draw_text(screen,"R Restart  •  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+186,align="center")
+            draw_text(screen,"** NEW BEST **",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
+        draw_text(screen,"R Restart  |  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+186,align="center")
 
     def handle_event(self, event):
         if event.type != pygame.KEYDOWN: return

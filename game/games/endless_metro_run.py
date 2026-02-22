@@ -319,7 +319,8 @@ class EndlessMetroRunScene(BaseScene):
         for sh in self._shots:
             if not sh["alive"]: continue
             sh["x"] += sh["vx"] * dts
-            br = pygame.Rect(int(sh["x"]), int(sh["y"]), 18, 4)
+            bx = int(sh["x"]) if sh["vx"] >= 0 else int(sh["x"]) - 18
+            br = pygame.Rect(bx, int(sh["y"]), 18, 4)
             if self._boss and br.colliderect(self._boss["rect"]) and self._boss["stun"] <= 0:
                 sh["alive"] = False
                 self._hit_boss()
@@ -328,7 +329,7 @@ class EndlessMetroRunScene(BaseScene):
                 if br.colliderect(e["rect"]):
                     sh["alive"] = False; e["rect"].x = -2000
                     self._add_pts(40); break
-        self._shots = [sh for sh in self._shots if -40 < sh["x"] < W + 80 and sh["alive"]]
+        self._shots = [sh for sh in self._shots if -120 < sh["x"] < W + 120 and sh["alive"]]
 
         # Jump buffer / coyote
         if self._on_ground:
@@ -730,9 +731,10 @@ class EndlessMetroRunScene(BaseScene):
 
         # Shots
         for sh in self._shots:
-            sx,sy = int(sh["x"]),int(sh["y"])
-            pygame.draw.rect(screen, Theme.ACCENT_YELLOW, (sx,sy,18,4), border_radius=2)
-            pygame.draw.rect(screen, Theme.TEXT_PRIMARY, (sx,sy,18,4), 1, border_radius=2)
+            sx = int(sh["x"]) if sh["vx"] >= 0 else int(sh["x"]) - 18
+            sy = int(sh["y"])
+            pygame.draw.rect(screen, Theme.ACCENT_YELLOW, (sx, sy, 18, 4), border_radius=2)
+            pygame.draw.rect(screen, Theme.TEXT_PRIMARY,  (sx, sy, 18, 4), 1, border_radius=2)
 
         # Enemies
         for e in self._enemies:
@@ -779,13 +781,19 @@ class EndlessMetroRunScene(BaseScene):
         hf = FontCache.get("Segoe UI",18,bold=True)
         draw_text(screen, f"Score: {self._score}", hf, Theme.ACCENT_YELLOW, 28, 33)
         draw_text(screen, f"Best: {max(self._best, self._score)}", hf, Theme.ACCENT_CYAN, 185, 33)
-        draw_text(screen, f"Lives: {self._lives}", hf, Theme.ACCENT_RED, 328, 33)
+        # Draw lives as heart icons
+        lx = 328
+        for _li in range(self._lives):
+            _hx = lx + _li * 22; _hy = 33
+            pygame.draw.circle(screen, (255,80,80), (_hx-4, _hy-2), 5)
+            pygame.draw.circle(screen, (255,80,80), (_hx+4, _hy-2), 5)
+            pygame.draw.polygon(screen, (255,80,80), [(_hx-5, _hy), (_hx+5, _hy), (_hx, _hy+7)])
         draw_text(screen, self._d["name"], FontCache.get("Segoe UI",16,bold=True),
                   Theme.ACCENT_PURPLE, 460, 34)
         # Powerup bar
         status = []
         if self._shields  > 0:    status.append(f"Shield:{self._shields}")
-        if self._double_t > 0:    status.append("2×Score")
+        if self._double_t > 0:    status.append("2xScore")
         if self._jumpboost_t > 0: status.append("Jump+")
         if self._blaster:          status.append("Blaster")
         if self._star_t > 0:       status.append("Star")
@@ -838,10 +846,12 @@ class EndlessMetroRunScene(BaseScene):
                 self._jump_buf_t = JUMP_BUF_T
             elif k in (pygame.K_f, pygame.K_LCTRL, pygame.K_RCTRL):
                 if self._blaster and self._shot_cd <= 0 and not self._game_over:
+                    facing = self._facing
+                    sx = float(self._player.right - 2) if facing >= 0 else float(self._player.left - 16)
                     self._shots.append({
-                        "x": float(self._player.right - 2),
+                        "x": sx,
                         "y": float(self._player.centery - 4),
-                        "vx": 11.5 + self._speed * 0.25,
+                        "vx": (11.5 + self._speed * 0.25) * facing,
                         "alive": True,
                     })
                     self._shot_cd = SHOT_CD

@@ -5,26 +5,26 @@ TetrisScene: Complete Tetris refactored from games.py tetris_main().
 
 Preserved from original
 -----------------------
-  • All 7 tetrominoes (I J L O S T Z) with correct shapes and colors
-  • Grid collision logic  (valid_space)
-  • Row clearing with gravity  (clear_rows)
-  • Score formula: 100 × cleared²
-  • Level-up every 10 lines, speed increase
-  • Soft drop (↓), hard drop (Space)
-  • Rotate CW (↑/X), CCW (Z)
-  • Pause (P), Restart (R), Quit (Q/Esc)
+  | All 7 tetrominoes (I J L O S T Z) with correct shapes and colors
+  | Grid collision logic  (valid_space)
+  | Row clearing with gravity  (clear_rows)
+  | Score formula: 100 × cleared²
+  | Level-up every 10 lines, speed increase
+  | Soft drop (v), hard drop (Space)
+  | Rotate CW (^/X), CCW (Z)
+  | Pause (P), Restart (R), Quit (Q/Esc)
 
 New features
 ------------
-  • Ghost piece — shows where the piece will land
-  • Hold piece  — C or Shift to hold/swap (once per piece)
-  • Wall kicks  — 3-position kick on rotation failure
-  • Line-clear flash — rows flash white before clearing
-  • dt-based fall timing — frame-rate independent
-  • DAS / ARR key-repeat handled by engine (pygame.key.set_repeat)
-  • Stats recording + achievement checking on game over
-  • New Best score banner on game over screen
-  • Scoring: Single=100, Double=300, Triple=500, Tetris=800 × level
+  | Ghost piece - shows where the piece will land
+  | Hold piece  - C or Shift to hold/swap (once per piece)
+  | Wall kicks  - 3-position kick on rotation failure
+  | Line-clear flash - rows flash white before clearing
+  | dt-based fall timing - frame-rate independent
+  | DAS / ARR key-repeat handled by engine (pygame.key.set_repeat)
+  | Stats recording + achievement checking on game over
+  | New Best score banner on game over screen
+  | Scoring: Single=100, Double=300, Triple=500, Tetris=800 × level
 """
 
 import math
@@ -71,7 +71,7 @@ MIN_SPEED   = 0.05
 # Line-clear flash duration in seconds
 FLASH_DURATION = 0.22
 
-# Scoring table: lines cleared → base points
+# Scoring table: lines cleared > base points
 SCORE_TABLE = {1: 100, 2: 300, 3: 500, 4: 800}
 
 # Wall kick offsets tried when rotation fails: [offset_x, ...]
@@ -101,7 +101,7 @@ SHAPES = [
      [0, 1, 1]],              # Z
 ]
 
-# Shape index → theme color (7 pieces, 7 accent colors)
+# Shape index > theme color (7 pieces, 7 accent colors)
 PIECE_COLOR_IDX = list(range(7))
 
 
@@ -139,7 +139,7 @@ class Piece:
 
 
 # ---------------------------------------------------------------------------
-# Grid helpers (pure functions — no side effects)
+# Grid helpers (pure functions - no side effects)
 # ---------------------------------------------------------------------------
 
 def _make_grid(locked: dict) -> list:
@@ -189,7 +189,7 @@ def _clear_rows(locked: dict, rows: list[int]) -> None:
     for y in rows:
         for x in range(COLS):
             locked.pop((x, y), None)
-    # Sort remaining keys top→bottom so we shift correctly
+    # Sort remaining keys top>bottom so we shift correctly
     for (x, y) in sorted(locked.keys(), key=lambda k: k[1]):
         shift = sum(1 for ry in rows if y < ry)
         if shift:
@@ -342,7 +342,7 @@ class TetrisScene(BaseScene):
         self._draw_hold_panel(screen)
         self._draw_sidebar(screen)
         draw_footer_hint(screen,
-            "←→ Move  •  ↑/X Rotate CW  •  Z CCW  •  Space Hard Drop  •  C Hold  •  P Pause  •  Q Menu",
+            "<> Move  |  ^/X Rotate CW  |  Z CCW  |  Space Hard Drop  |  C Hold  |  P Pause  |  Q Menu",
             y_offset=22)
 
         if self._paused:
@@ -466,7 +466,7 @@ class TetrisScene(BaseScene):
             self._flash_timer = FLASH_DURATION
             self._flashing    = True
         else:
-            # No clear — spawn immediately
+            # No clear - spawn immediately
             self._current = self._next
             self._next    = Piece()
             self._can_hold = True
@@ -632,8 +632,8 @@ class TetrisScene(BaseScene):
         draw_card(screen, (SIDE_X, cy, SIDE_W, ctrl_h))
         draw_panel_title(screen, SIDE_X + 14, cy + 12, "CONTROLS")
         controls = [
-            ("←→",    "Move"),
-            ("↑ / X", "Rotate CW"),
+            ("<>",    "Move"),
+            ("^ / X", "Rotate CW"),
             ("Z",      "Rotate CCW"),
             ("Space",  "Hard Drop"),
             ("C",      "Hold"),
@@ -675,23 +675,23 @@ class TetrisScene(BaseScene):
         # New best banner
         if self._new_best:
             best_font = FontCache.get("Segoe UI", 13, bold=True)
-            draw_text(screen, "✦  NEW BEST  ✦", best_font, Theme.ACCENT_YELLOW,
+            draw_text(screen, "** NEW BEST **", best_font, Theme.ACCENT_YELLOW,
                       w // 2, cy + 140, align="center")
 
         # Stats row
         sf = FontCache.get("Segoe UI", 13)
         draw_text(screen,
-                  f"Level {self._level}   •   {self._lines} lines   •   {self._tetris_count}× Tetris",
+                  f"Level {self._level}   |   {self._lines} lines   |   {self._tetris_count}x Tetris",
                   sf, Theme.TEXT_SECONDARY, w // 2, cy + 168, align="center")
 
         # Hint
         hint_font = FontCache.get("Segoe UI", 13)
-        draw_text(screen, "R  Restart   •   Q  Menu",
+        draw_text(screen, "R  Restart   |   Q  Menu",
                   hint_font, Theme.TEXT_MUTED, w // 2, cy + 228, align="center")
 
 
 # ---------------------------------------------------------------------------
-# Plugin metadata — read by MainMenuScene's GAME_REGISTRY and plugin loader
+# Plugin metadata - read by MainMenuScene's GAME_REGISTRY and plugin loader
 # ---------------------------------------------------------------------------
 
 GAME_META = {

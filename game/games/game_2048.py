@@ -1,4 +1,4 @@
-"""games/game_2048.py — Game2048Scene"""
+"""games/game_2048.py - Game2048Scene"""
 import random, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -155,7 +155,7 @@ class Game2048Scene(BaseScene):
                 if val:
                     fs = 36 if val<1000 else (28 if val<10000 else 22)
                     draw_text(screen,str(val),FontCache.get("Segoe UI",fs,bold=True),fg,tx+TILE//2,ty+TILE//2,align="center")
-        draw_footer_hint(screen,"Arrow Keys Move  •  R Restart  •  Q Menu",y_offset=26)
+        draw_footer_hint(screen,"Arrow Keys Move  |  R Restart  |  Q Menu",y_offset=26)
         if self._dead or self._won: self._draw_end(screen)
 
     def _draw_end(self, screen):
@@ -168,8 +168,8 @@ class Game2048Scene(BaseScene):
             draw_text(screen,"GAME OVER",FontCache.get("Segoe UI",44,bold=True),Theme.ACCENT_RED,W//2,cy+52,align="center")
         draw_text(screen,f"Score: {self._score}",FontCache.get("Segoe UI",26,bold=True),Theme.TEXT_PRIMARY,W//2,cy+108,align="center")
         if self._new_best:
-            draw_text(screen,"✦  NEW BEST  ✦",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
-        hint = "Continue playing or R Restart  •  Q Menu" if self._won else "R Restart  •  Q Menu"
+            draw_text(screen,"** NEW BEST **",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+148,align="center")
+        hint = "Continue playing or R Restart  |  Q Menu" if self._won else "R Restart  |  Q Menu"
         draw_text(screen,hint,FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+196,align="center")
 
     def handle_event(self, event):

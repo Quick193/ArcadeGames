@@ -1,4 +1,4 @@
-"""games/minesweeper.py — MinesweeperScene"""
+"""games/minesweeper.py - MinesweeperScene"""
 import random, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -84,8 +84,8 @@ class MinesweeperScene(BaseScene):
             pygame.draw.rect(screen,Theme.CARD_BORDER,(bx,by,bw,bh),1,border_radius=10)
             draw_text(screen,d["name"],bf,Theme.TEXT_PRIMARY if sel else Theme.TEXT_SECONDARY,bx+bw//2,by+bh//2-10,align="center")
             sf=FontCache.get("Segoe UI",11)
-            draw_text(screen,f"{d['cols']}×{d['rows']}  •  {d['mines']} mines",sf,Theme.TEXT_MUTED,bx+bw//2,by+bh//2+12,align="center")
-        draw_footer_hint(screen,"↑↓ Select  •  Enter Start  •  Q Back",y_offset=26)
+            draw_text(screen,f"{d['cols']}x{d['rows']}  |  {d['mines']} mines",sf,Theme.TEXT_MUTED,bx+bw//2,by+bh//2+12,align="center")
+        draw_footer_hint(screen,"^v Select  |  Enter Start  |  Q Back",y_offset=26)
 
     def _draw_game(self, screen):
         cs=self._cell
@@ -93,8 +93,8 @@ class MinesweeperScene(BaseScene):
         draw_card(screen,((W-460)//2,14,460,46))
         hf=FontCache.get("Segoe UI",16,bold=True)
         flags=sum(self._flagged[r][c] for r in range(self._rows) for c in range(self._cols))
-        draw_text(screen,f"💣 {self._mines-flags}",hf,Theme.ACCENT_RED,(W-460)//2+24,30)
-        draw_text(screen,f"⏱ {int(self._timer)}s",hf,Theme.ACCENT_CYAN,(W+460)//2-100,30)
+        draw_text(screen,f"* {self._mines-flags}",hf,Theme.ACCENT_RED,(W-460)//2+24,30)
+        draw_text(screen,f"T {int(self._timer)}s",hf,Theme.ACCENT_CYAN,(W+460)//2-100,30)
         draw_text(screen,self._diff["name"],hf,Theme.TEXT_MUTED,W//2,30,align="center")
         # Grid
         for r in range(self._rows):
@@ -112,11 +112,14 @@ class MinesweeperScene(BaseScene):
                 elif flag:
                     pygame.draw.rect(screen,Theme.BG_TERTIARY,(x+1,y+1,cs-2,cs-2),border_radius=3)
                     pygame.draw.rect(screen,Theme.CARD_BORDER,(x+1,y+1,cs-2,cs-2),1,border_radius=3)
-                    draw_text(screen,"🚩",FontCache.get("Segoe UI",max(8,cs-16)),Theme.ACCENT_RED,x+cs//2,y+cs//2,align="center")
+                    # Draw a simple flag shape
+                    fx, fy = x + cs//2, y + cs//2
+                    pygame.draw.line(screen, Theme.ACCENT_RED, (fx-1, fy-cs//3), (fx-1, fy+cs//3), 2)
+                    pygame.draw.polygon(screen, Theme.ACCENT_RED, [(fx-1, fy-cs//3), (fx+cs//4, fy-cs//6), (fx-1, fy)])
                 else:
                     pygame.draw.rect(screen,Theme.CARD_BG,(x+1,y+1,cs-2,cs-2),border_radius=3)
                     pygame.draw.rect(screen,Theme.CARD_BORDER,(x+1,y+1,cs-2,cs-2),1,border_radius=3)
-        draw_footer_hint(screen,"Left Click Reveal  •  Right Click Flag  •  R Restart  •  Q Menu",y_offset=26)
+        draw_footer_hint(screen,"Left Click Reveal  |  Right Click Flag  |  R Restart  |  Q Menu",y_offset=26)
         if self._dead: self._draw_end(screen,False)
         elif self._won: self._draw_end(screen,True)
 
@@ -124,11 +127,11 @@ class MinesweeperScene(BaseScene):
         draw_overlay(screen,180)
         cw,ch=400,200; cx,cy=(W-cw)//2,(H-ch)//2
         draw_card(screen,(cx,cy,cw,ch))
-        title="CLEARED! 💣" if won else "BOOM! 💥"
+        title="CLEARED!" if won else "BOOM!"
         color=Theme.ACCENT_GREEN if won else Theme.ACCENT_RED
         draw_text(screen,title,FontCache.get("Segoe UI",40,bold=True),color,W//2,cy+52,align="center")
         draw_text(screen,f"Time: {int(self._timer)}s",FontCache.get("Segoe UI",20),Theme.TEXT_PRIMARY,W//2,cy+108,align="center")
-        draw_text(screen,"R Restart  •  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+158,align="center")
+        draw_text(screen,"R Restart  |  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+158,align="center")
 
     def handle_event(self, event):
         if event.type==pygame.KEYDOWN:

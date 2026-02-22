@@ -1,4 +1,4 @@
-"""games/neon_blob_dash.py — NeonBlobDashScene (Dino-runner style)"""
+"""games/neon_blob_dash.py - NeonBlobDashScene (Dino-runner style)"""
 import random, math, pygame
 from engine import BaseScene, Theme, RenderManager, FontCache, draw_text, draw_card, draw_overlay, draw_footer_hint
 from engine.engine import SCREEN_WIDTH as W, SCREEN_HEIGHT as H
@@ -126,7 +126,7 @@ class NeonBlobDashScene(BaseScene):
         best=self.stats.best_score(self.GAME_ID) if self.stats else 0
         draw_text(screen,f"Best: {max(best,int(self._score))}",hf,Theme.ACCENT_CYAN,200,32)
         draw_text(screen,"NEON BLOB DASH",FontCache.get("Segoe UI",13,bold=True),Theme.TEXT_PRIMARY,460,24)
-        draw_footer_hint(screen,"Space/↑ Jump  •  ↓ Duck  •  P Pause  •  R Restart  •  Q Menu",y_offset=26)
+        draw_footer_hint(screen,"Space/^ Jump  |  v Duck  |  P Pause  |  R Restart  |  Q Menu",y_offset=26)
         if self._paused:
             from engine.ui import draw_pause_card; draw_pause_card(screen)
         elif self._dead: self._draw_gameover(screen)
@@ -138,8 +138,8 @@ class NeonBlobDashScene(BaseScene):
         draw_text(screen,"GAME OVER",FontCache.get("Segoe UI",44,bold=True),Theme.ACCENT_RED,W//2,cy+50,align="center")
         draw_text(screen,f"Score: {int(self._score)}",FontCache.get("Segoe UI",26,bold=True),Theme.TEXT_PRIMARY,W//2,cy+106,align="center")
         if self._new_best:
-            draw_text(screen,"✦  NEW BEST  ✦",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+144,align="center")
-        draw_text(screen,"R Restart  •  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+192,align="center")
+            draw_text(screen,"** NEW BEST **",FontCache.get("Segoe UI",13,bold=True),Theme.ACCENT_YELLOW,W//2,cy+144,align="center")
+        draw_text(screen,"R Restart  |  Q Menu",FontCache.get("Segoe UI",13),Theme.TEXT_MUTED,W//2,cy+192,align="center")
 
     def handle_event(self,event):
         if event.type!=pygame.KEYDOWN: return

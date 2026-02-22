@@ -28,17 +28,22 @@
       }
     },
     "snake": {
-      "games_played": 1,
+      "games_played": 2,
       "games_won": 0,
-      "games_lost": 1,
+      "games_lost": 2,
       "best_score": 270,
-      "total_playtime": 93.8353578329552,
+      "total_playtime": 158.9083080419805,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
         {
           "score": 270,
           "date": "2026-02-20T22:32:47",
+          "extra": {}
+        },
+        {
+          "score": 180,
+          "date": "2026-02-22T18:08:42",
           "extra": {}
         }
       ],
@@ -66,17 +71,22 @@
       }
     },
     "flappy": {
-      "games_played": 1,
+      "games_played": 2,
       "games_won": 0,
-      "games_lost": 1,
+      "games_lost": 2,
       "best_score": 0,
-      "total_playtime": 4.73986762505956,
+      "total_playtime": 5.362837708089501,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
         {
           "score": 0,
           "date": "2026-02-20T21:38:07",
+          "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:44:15",
           "extra": {}
         }
       ],
@@ -167,11 +177,11 @@
       }
     },
     "breakout": {
-      "games_played": 1,
+      "games_played": 2,
       "games_won": 0,
-      "games_lost": 1,
+      "games_lost": 2,
       "best_score": 1020,
-      "total_playtime": 196.26918325014412,
+      "total_playtime": 222.41167166712694,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
@@ -179,19 +189,31 @@
           "score": 1020,
           "date": "2026-02-20T22:37:28",
           "extra": {}
+        },
+        {
+          "score": 60,
+          "date": "2026-02-22T17:44:47",
+          "extra": {}
         }
       ],
       "extra": {}
     },
     "memory_match": {
-      "games_played": 1,
-      "games_won": 1,
+      "games_played": 2,
+      "games_won": 2,
       "games_lost": 0,
-      "best_score": 840,
-      "total_playtime": 26.096395666943863,
-      "current_streak": 1,
-      "best_streak": 1,
+      "best_score": 870,
+      "total_playtime": 50.90039320779033,
+      "current_streak": 2,
+      "best_streak": 2,
       "top_scores": [
+        {
+          "score": 870,
+          "date": "2026-02-22T17:45:16",
+          "extra": {
+            "mismatches": 5
+          }
+        },
         {
           "score": 840,
           "date": "2026-02-20T21:39:50",
@@ -201,18 +223,23 @@
         }
       ],
       "extra": {
-        "mismatches": 8
+        "mismatches": 13
       }
     },
     "neon_blob_dash": {
-      "games_played": 3,
+      "games_played": 4,
       "games_won": 0,
-      "games_lost": 3,
-      "best_score": 151,
-      "total_playtime": 20.231470708269626,
+      "games_lost": 4,
+      "best_score": 550,
+      "total_playtime": 42.24944925028831,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
+        {
+          "score": 550,
+          "date": "2026-02-22T17:45:42",
+          "extra": {}
+        },
         {
           "score": 151,
           "date": "2026-02-20T22:02:07",
@@ -232,11 +259,11 @@
       "extra": {}
     },
     "endless_metro_run": {
-      "games_played": 3,
+      "games_played": 6,
       "games_won": 0,
-      "games_lost": 3,
+      "games_lost": 6,
       "best_score": 4260,
-      "total_playtime": 214.82722699898295,
+      "total_playtime": 292.38278466579504,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
@@ -247,6 +274,24 @@
             "difficulty": "Medium",
             "distance": 36375,
             "coins": 45
+          }
+        },
+        {
+          "score": 1870,
+          "date": "2026-02-22T17:47:47",
+          "extra": {
+            "difficulty": "Medium",
+            "distance": 15484,
+            "coins": 19
+          }
+        },
+        {
+          "score": 80,
+          "date": "2026-02-22T18:07:21",
+          "extra": {
+            "difficulty": "Medium",
+            "distance": 3355,
+            "coins": 6
           }
         },
         {
@@ -266,11 +311,20 @@
             "distance": 1581,
             "coins": 3
           }
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:48:09",
+          "extra": {
+            "difficulty": "Medium",
+            "distance": 0,
+            "coins": 0
+          }
         }
       ],
       "extra": {
-        "distance": 39100,
-        "coins": 51
+        "distance": 57939,
+        "coins": 76
       }
     },
     "space_invaders": {
@@ -316,11 +370,11 @@
       }
     },
     "minesweeper": {
-      "games_played": 1,
+      "games_played": 6,
       "games_won": 0,
-      "games_lost": 1,
+      "games_lost": 6,
       "best_score": 0,
-      "total_playtime": 6.086187583161518,
+      "total_playtime": 106.6054977898486,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
@@ -328,16 +382,41 @@
           "score": 0,
           "date": "2026-02-20T21:41:58",
           "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:42:41",
+          "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:52:37",
+          "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:54:39",
+          "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:55:22",
+          "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:55:44",
+          "extra": {}
         }
       ],
       "extra": {}
     },
     "connect4": {
-      "games_played": 6,
+      "games_played": 7,
       "games_won": 2,
-      "games_lost": 4,
+      "games_lost": 5,
       "best_score": 1,
-      "total_playtime": 86.27021137825213,
+      "total_playtime": 135.3552119193133,
       "current_streak": 0,
       "best_streak": 1,
       "top_scores": [
@@ -370,19 +449,34 @@
           "score": 0,
           "date": "2026-02-21T23:06:28",
           "extra": {}
+        },
+        {
+          "score": 0,
+          "date": "2026-02-22T17:49:04",
+          "extra": {}
         }
       ],
       "extra": {}
     },
     "sudoku": {
-      "games_played": 4,
+      "games_played": 5,
       "games_won": 1,
-      "games_lost": 3,
-      "best_score": 717,
-      "total_playtime": 726.8140925024636,
+      "games_lost": 4,
+      "best_score": 990,
+      "total_playtime": 736.5493369603064,
       "current_streak": 0,
       "best_streak": 1,
       "top_scores": [
+        {
+          "score": 990,
+          "date": "2026-02-22T17:49:19",
+          "extra": {
+            "difficulty": "Easy",
+            "mistakes": 0,
+            "hints": 0,
+            "time_s": 10
+          }
+        },
         {
           "score": 717,
           "date": "2026-02-22T11:45:10",
@@ -427,15 +521,15 @@
       "extra": {
         "mistakes": 6,
         "hints": 0,
-        "time_s": 724
+        "time_s": 734
       }
     },
     "asteroids": {
-      "games_played": 2,
+      "games_played": 3,
       "games_won": 0,
-      "games_lost": 2,
+      "games_lost": 3,
       "best_score": 2570,
-      "total_playtime": 254.28048779186793,
+      "total_playtime": 263.4061470828019,
       "current_streak": 0,
       "best_streak": 0,
       "top_scores": [
@@ -452,15 +546,22 @@
           "extra": {
             "wave": 1
           }
+        },
+        {
+          "score": 170,
+          "date": "2026-02-22T17:49:31",
+          "extra": {
+            "wave": 1
+          }
         }
       ],
       "extra": {
-        "wave": 3
+        "wave": 4
       }
     }
   },
-  "global_playtime": 3964.834734670911,
-  "total_games": 39,
+  "global_playtime": 4349.515891626151,
+  "total_games": 55,
   "first_play": "2026-02-20T21:38:07",
-  "last_play": "2026-02-22T11:48:26"
+  "last_play": "2026-02-22T18:08:42"
 }
