@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import type { ControlScheme } from "../../types/settings";
 import {
   CELL_SIZE,
   COLS,
@@ -26,13 +27,15 @@ const CANVAS_H = BOARD_H;
 
 interface TetrisGameProps {
   onExit: () => void;
+  controlScheme: ControlScheme;
 }
 
-function TetrisGame({ onExit }: TetrisGameProps) {
+function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const fallAccumulatorRef = useRef(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<TetrisState>(() => createInitialState());
   const [isPaused, setIsPaused] = useState(false);
@@ -193,32 +196,85 @@ function TetrisGame({ onExit }: TetrisGameProps) {
         {state.gameOver && <span>Game Over</span>}
       </div>
 
-      <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} className="tetris-canvas" />
-
-      <MobileControls
-        dpad={{
-          left: () => performAction("left"),
-          right: () => performAction("right"),
-          down: () => performAction("down")
+      <canvas
+        ref={canvasRef}
+        width={CANVAS_W}
+        height={CANVAS_H}
+        className="tetris-canvas"
+        onTouchStart={(event) => {
+          if (controlScheme !== "gestures") {
+            return;
+          }
+          const touch = event.touches[0];
+          touchStartRef.current = { x: touch.clientX, y: touch.clientY };
         }}
-        actions={[
-          { label: "Rotate", onPress: () => performAction("cw") },
-          { label: "Rotate CCW", onPress: () => performAction("ccw") },
-          { label: "Hard Drop", onPress: () => performAction("drop") },
-          { label: "Hold", onPress: () => performAction("hold") },
-          { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
-          {
-            label: "Restart",
-            onPress: () => {
-              setState(createInitialState());
-              setIsPaused(false);
-              fallAccumulatorRef.current = 0;
-              lastTimeRef.current = null;
-            }
-          },
-          { label: "Menu", onPress: onExit }
-        ]}
+        onTouchEnd={(event) => {
+          if (controlScheme !== "gestures" || !touchStartRef.current) {
+            return;
+          }
+          const touch = event.changedTouches[0];
+          const dx = touch.clientX - touchStartRef.current.x;
+          const dy = touch.clientY - touchStartRef.current.y;
+          touchStartRef.current = null;
+
+          if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+            performAction("cw");
+            return;
+          }
+          if (Math.abs(dx) > Math.abs(dy)) {
+            performAction(dx > 0 ? "right" : "left");
+          } else if (dy > 0) {
+            performAction("down");
+          } else {
+            performAction("drop");
+          }
+        }}
       />
+
+      {controlScheme === "buttons" ? (
+        <MobileControls
+          dpad={{
+            left: () => performAction("left"),
+            right: () => performAction("right"),
+            down: () => performAction("down")
+          }}
+          actions={[
+            { label: "Rotate", onPress: () => performAction("cw") },
+            { label: "Rotate CCW", onPress: () => performAction("ccw") },
+            { label: "Hard Drop", onPress: () => performAction("drop") },
+            { label: "Hold", onPress: () => performAction("hold") },
+            { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
+            {
+              label: "Restart",
+              onPress: () => {
+                setState(createInitialState());
+                setIsPaused(false);
+                fallAccumulatorRef.current = 0;
+                lastTimeRef.current = null;
+              }
+            },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      ) : (
+        <MobileControls
+          actions={[
+            { label: "Hold", onPress: () => performAction("hold") },
+            { label: "Rotate CCW", onPress: () => performAction("ccw") },
+            { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
+            {
+              label: "Restart",
+              onPress: () => {
+                setState(createInitialState());
+                setIsPaused(false);
+                fallAccumulatorRef.current = 0;
+                lastTimeRef.current = null;
+              }
+            },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      )}
     </section>
   );
 }

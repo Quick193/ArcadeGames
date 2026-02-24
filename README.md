@@ -17,6 +17,7 @@ The React conversion currently includes:
 - 2048 playable in browser (arrow-key merge logic)
 - Placeholders for remaining games
 - Mobile touch controls for converted games
+- Main menu Settings panel with global mobile input mode: `Buttons` or `Gestures`
 
 ### Run
 

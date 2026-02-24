@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import type { ControlScheme } from "../../types/settings";
 import {
   COLS,
   ROWS,
@@ -16,12 +17,14 @@ const HEIGHT = ROWS * TILE_SIZE;
 
 interface SnakeGameProps {
   onExit: () => void;
+  controlScheme: ControlScheme;
 }
 
-function SnakeGame({ onExit }: SnakeGameProps) {
+function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const accumulatorRef = useRef(0);
   const lastTickRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<SnakeState>(() => createInitialState());
   const [isPaused, setIsPaused] = useState(false);
@@ -145,29 +148,64 @@ function SnakeGame({ onExit }: SnakeGameProps) {
         {gameOver && <span>Game Over</span>}
       </div>
 
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="snake-canvas" />
-
-      <MobileControls
-        dpad={{
-          up: () => applyDirection("ArrowUp"),
-          down: () => applyDirection("ArrowDown"),
-          left: () => applyDirection("ArrowLeft"),
-          right: () => applyDirection("ArrowRight")
+      <canvas
+        ref={canvasRef}
+        width={WIDTH}
+        height={HEIGHT}
+        className="snake-canvas"
+        onTouchStart={(event) => {
+          if (controlScheme !== "gestures") {
+            return;
+          }
+          const touch = event.touches[0];
+          touchStartRef.current = { x: touch.clientX, y: touch.clientY };
         }}
-        actions={[
-          { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
-          {
-            label: "Restart",
-            onPress: () => {
-              setState(createInitialState());
-              setIsPaused(false);
-              accumulatorRef.current = 0;
-              lastTickRef.current = null;
-            }
-          },
-          { label: "Menu", onPress: onExit }
-        ]}
+        onTouchEnd={(event) => {
+          if (controlScheme !== "gestures" || !touchStartRef.current) {
+            return;
+          }
+          const touch = event.changedTouches[0];
+          const dx = touch.clientX - touchStartRef.current.x;
+          const dy = touch.clientY - touchStartRef.current.y;
+          touchStartRef.current = null;
+
+          if (Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+            setIsPaused((prev) => !prev);
+            return;
+          }
+          if (Math.abs(dx) > Math.abs(dy)) {
+            applyDirection(dx > 0 ? "ArrowRight" : "ArrowLeft");
+          } else {
+            applyDirection(dy > 0 ? "ArrowDown" : "ArrowUp");
+          }
+        }}
       />
+
+      {controlScheme === "buttons" ? (
+        <MobileControls
+          dpad={{
+            up: () => applyDirection("ArrowUp"),
+            down: () => applyDirection("ArrowDown"),
+            left: () => applyDirection("ArrowLeft"),
+            right: () => applyDirection("ArrowRight")
+          }}
+          actions={[
+            { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
+            {
+              label: "Restart",
+              onPress: () => {
+                setState(createInitialState());
+                setIsPaused(false);
+                accumulatorRef.current = 0;
+                lastTickRef.current = null;
+              }
+            },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      ) : (
+        <p className="gesture-hint">Gestures: swipe to move, tap to pause.</p>
+      )}
     </section>
   );
 }

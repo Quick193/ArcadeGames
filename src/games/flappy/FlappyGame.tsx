@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import type { ControlScheme } from "../../types/settings";
 import {
   BIRD_R,
   HEIGHT,
@@ -16,12 +17,14 @@ import "./flappy.css";
 
 interface FlappyGameProps {
   onExit: () => void;
+  controlScheme: ControlScheme;
 }
 
-function FlappyGame({ onExit }: FlappyGameProps) {
+function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<FlappyState>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
@@ -129,9 +132,47 @@ function FlappyGame({ onExit }: FlappyGameProps) {
         </button>
       </header>
 
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="flappy-canvas" />
+      <canvas
+        ref={canvasRef}
+        width={WIDTH}
+        height={HEIGHT}
+        className="flappy-canvas"
+        onTouchStart={(event) => {
+          if (controlScheme !== "gestures") {
+            return;
+          }
+          const touch = event.touches[0];
+          touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        }}
+        onTouchEnd={(event) => {
+          if (controlScheme !== "gestures" || !touchStartRef.current) {
+            return;
+          }
+          const touch = event.changedTouches[0];
+          const dx = touch.clientX - touchStartRef.current.x;
+          const dy = touch.clientY - touchStartRef.current.y;
+          touchStartRef.current = null;
 
-      {state.phase === "select" ? (
+          if (state.phase === "select") {
+            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
+              if (dy > 0) {
+                selectDown();
+              } else {
+                selectUp();
+              }
+            } else {
+              selectPlay();
+            }
+            return;
+          }
+
+          if (!state.dead && !state.paused) {
+            setState((prev) => flap(prev));
+          }
+        }}
+      />
+
+      {controlScheme === "buttons" && state.phase === "select" ? (
         <MobileControls
           dpad={{ up: selectUp, down: selectDown }}
           actions={[
@@ -139,10 +180,26 @@ function FlappyGame({ onExit }: FlappyGameProps) {
             { label: "Menu", onPress: onExit }
           ]}
         />
-      ) : (
+      ) : controlScheme === "buttons" ? (
         <MobileControls
           actions={[
             { label: "Flap", onPress: () => setState((prev) => flap(prev)) },
+            { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
+            {
+              label: "Restart",
+              onPress: () => {
+                if (!state.diff) {
+                  return;
+                }
+                setState((prev) => startGame(prev, prev.diff as Difficulty));
+              }
+            },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      ) : (
+        <MobileControls
+          actions={[
             { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
             {
               label: "Restart",

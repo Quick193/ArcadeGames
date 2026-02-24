@@ -7,9 +7,11 @@ import SnakeGame from "./games/snake/SnakeGame";
 import TetrisGame from "./games/tetris/TetrisGame";
 import MainMenu from "./screens/MainMenu";
 import type { GameId, GameMeta } from "./types/game";
+import type { ControlScheme } from "./types/settings";
 
 function App() {
   const [activeGame, setActiveGame] = useState<GameId | null>(null);
+  const [controlScheme, setControlScheme] = useState<ControlScheme>(() => readControlScheme());
 
   const selectedGame: GameMeta | null = useMemo(() => {
     if (!activeGame) {
@@ -23,6 +25,11 @@ function App() {
       {!activeGame && (
         <MainMenu
           games={gameRegistry}
+          controlScheme={controlScheme}
+          onControlSchemeChange={(scheme) => {
+            setControlScheme(scheme);
+            writeControlScheme(scheme);
+          }}
           onSelectGame={(gameId) => {
             setActiveGame(gameId);
           }}
@@ -31,6 +38,7 @@ function App() {
 
       {activeGame === "snake" && (
         <SnakeGame
+          controlScheme={controlScheme}
           onExit={() => {
             setActiveGame(null);
           }}
@@ -39,6 +47,7 @@ function App() {
 
       {activeGame === "tetris" && (
         <TetrisGame
+          controlScheme={controlScheme}
           onExit={() => {
             setActiveGame(null);
           }}
@@ -47,6 +56,7 @@ function App() {
 
       {activeGame === "pong" && (
         <PongGame
+          controlScheme={controlScheme}
           onExit={() => {
             setActiveGame(null);
           }}
@@ -55,6 +65,7 @@ function App() {
 
       {activeGame === "flappy" && (
         <FlappyGame
+          controlScheme={controlScheme}
           onExit={() => {
             setActiveGame(null);
           }}
@@ -63,6 +74,7 @@ function App() {
 
       {activeGame === "game_2048" && (
         <Game2048
+          controlScheme={controlScheme}
           onExit={() => {
             setActiveGame(null);
           }}
@@ -86,6 +98,15 @@ function App() {
       )}
     </div>
   );
+}
+
+function readControlScheme(): ControlScheme {
+  const raw = window.localStorage.getItem("arcade.controls.scheme");
+  return raw === "gestures" ? "gestures" : "buttons";
+}
+
+function writeControlScheme(scheme: ControlScheme): void {
+  window.localStorage.setItem("arcade.controls.scheme", scheme);
 }
 
 export default App;

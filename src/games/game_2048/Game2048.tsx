@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import type { ControlScheme } from "../../types/settings";
 import { GRID, applyMove, bestTile, createInitialState, type Direction, type Game2048State } from "./game2048.logic";
 import "./game2048.css";
 
 interface Game2048Props {
   onExit: () => void;
+  controlScheme: ControlScheme;
 }
 
 const COLORS: Record<number, { bg: string; fg: string }> = {
@@ -22,7 +24,7 @@ const COLORS: Record<number, { bg: string; fg: string }> = {
   2048: { bg: "#edc22e", fg: "#f9f6f2" }
 };
 
-function Game2048({ onExit }: Game2048Props) {
+function Game2048({ onExit, controlScheme }: Game2048Props) {
   const [state, setState] = useState<Game2048State>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -92,11 +94,14 @@ function Game2048({ onExit }: Game2048Props) {
           className="g2048-board"
           style={{ gridTemplateColumns: `repeat(${GRID}, 1fr)` }}
           onTouchStart={(event) => {
+            if (controlScheme !== "gestures") {
+              return;
+            }
             const touch = event.touches[0];
             touchStartRef.current = { x: touch.clientX, y: touch.clientY };
           }}
           onTouchEnd={(event) => {
-            if (!touchStartRef.current) {
+            if (controlScheme !== "gestures" || !touchStartRef.current) {
               return;
             }
             const touch = event.changedTouches[0];
@@ -142,18 +147,27 @@ function Game2048({ onExit }: Game2048Props) {
         )}
       </section>
 
-      <MobileControls
-        dpad={{
-          up: () => move("up"),
-          down: () => move("down"),
-          left: () => move("left"),
-          right: () => move("right")
-        }}
-        actions={[
-          { label: "Restart", onPress: () => setState(createInitialState()) },
-          { label: "Menu", onPress: onExit }
-        ]}
-      />
+      {controlScheme === "buttons" ? (
+        <MobileControls
+          dpad={{
+            up: () => move("up"),
+            down: () => move("down"),
+            left: () => move("left"),
+            right: () => move("right")
+          }}
+          actions={[
+            { label: "Restart", onPress: () => setState(createInitialState()) },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      ) : (
+        <MobileControls
+          actions={[
+            { label: "Restart", onPress: () => setState(createInitialState()) },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      )}
     </section>
   );
 }

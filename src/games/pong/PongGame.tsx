@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import type { ControlScheme } from "../../types/settings";
 import {
   BALL_R,
   HEIGHT,
@@ -20,12 +21,15 @@ import "./pong.css";
 
 interface PongGameProps {
   onExit: () => void;
+  controlScheme: ControlScheme;
 }
 
-function PongGame({ onExit }: PongGameProps) {
+function PongGame({ onExit, controlScheme }: PongGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const touchInputRef = useRef<InputState>({ p1Up: false, p1Down: false, p2Up: false, p2Down: false });
+  const menuTouchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<PongState>(() => createInitialState());
 
@@ -66,12 +70,7 @@ function PongGame({ onExit }: PongGameProps) {
           return;
         }
         if (event.key === "Enter") {
-          setState((prev) => {
-            if (prev.selection === 0) {
-              return enterDifficultySelection(prev);
-            }
-            return startGame(prev, "2p", null);
-          });
+          setState((prev) => (prev.selection === 0 ? enterDifficultySelection(prev) : startGame(prev, "2p", null)));
         }
         return;
       }
@@ -86,10 +85,7 @@ function PongGame({ onExit }: PongGameProps) {
           return;
         }
         if (event.key === "Enter") {
-          setState((prev) => {
-            const diff = ["easy", "medium", "hard"][prev.selection] as Difficulty;
-            return startGame(prev, "1p", diff);
-          });
+          setState((prev) => startGame(prev, "1p", ["easy", "medium", "hard"][prev.selection] as Difficulty));
         }
         return;
       }
@@ -121,11 +117,12 @@ function PongGame({ onExit }: PongGameProps) {
   useEffect(() => {
     const tick = () => {
       setState((prev) => {
+        const touch = touchInputRef.current;
         const input: InputState = {
-          p1Up: keysRef.current.has("ArrowUp"),
-          p1Down: keysRef.current.has("ArrowDown"),
-          p2Up: keysRef.current.has("w") || keysRef.current.has("W"),
-          p2Down: keysRef.current.has("s") || keysRef.current.has("S")
+          p1Up: keysRef.current.has("ArrowUp") || touch.p1Up,
+          p1Down: keysRef.current.has("ArrowDown") || touch.p1Down,
+          p2Up: (keysRef.current.has("w") || keysRef.current.has("W")) || touch.p2Up,
+          p2Down: (keysRef.current.has("s") || keysRef.current.has("S")) || touch.p2Down
         };
 
         return stepGame(prev, input);
@@ -159,9 +156,60 @@ function PongGame({ onExit }: PongGameProps) {
         </button>
       </header>
 
-      <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} className="pong-canvas" />
+      <canvas
+        ref={canvasRef}
+        width={WIDTH}
+        height={HEIGHT}
+        className="pong-canvas"
+        onTouchStart={(event) => {
+          if (controlScheme !== "gestures") {
+            return;
+          }
+          if (state.phase === "game") {
+            updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
+            return;
+          }
+          const touch = event.touches[0];
+          menuTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
+        }}
+        onTouchMove={(event) => {
+          if (controlScheme === "gestures" && state.phase === "game") {
+            updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
+          }
+        }}
+        onTouchEnd={(event) => {
+          if (controlScheme !== "gestures") {
+            return;
+          }
+          if (state.phase === "game") {
+            updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
+            return;
+          }
+          if (!menuTouchStartRef.current) {
+            return;
+          }
+          const touch = event.changedTouches[0];
+          const dy = touch.clientY - menuTouchStartRef.current.y;
+          menuTouchStartRef.current = null;
 
-      {state.phase === "mode" && (
+          if (Math.abs(dy) > 20) {
+            if (state.phase === "mode") {
+              dy > 0 ? moveSelectionDown(2) : moveSelectionUp(2);
+            } else if (state.phase === "difficulty") {
+              dy > 0 ? moveSelectionDown(3) : moveSelectionUp(3);
+            }
+            return;
+          }
+
+          if (state.phase === "mode") {
+            setState((prev) => (prev.selection === 0 ? enterDifficultySelection(prev) : startGame(prev, "2p", null)));
+          } else if (state.phase === "difficulty") {
+            setState((prev) => startGame(prev, "1p", ["easy", "medium", "hard"][prev.selection] as Difficulty));
+          }
+        }}
+      />
+
+      {controlScheme === "buttons" && state.phase === "mode" && (
         <MobileControls
           dpad={{ up: () => moveSelectionUp(2), down: () => moveSelectionDown(2) }}
           actions={[
@@ -176,7 +224,7 @@ function PongGame({ onExit }: PongGameProps) {
         />
       )}
 
-      {state.phase === "difficulty" && (
+      {controlScheme === "buttons" && state.phase === "difficulty" && (
         <MobileControls
           dpad={{ up: () => moveSelectionUp(3), down: () => moveSelectionDown(3) }}
           actions={[
@@ -191,7 +239,7 @@ function PongGame({ onExit }: PongGameProps) {
         />
       )}
 
-      {state.phase === "game" && (
+      {controlScheme === "buttons" && state.phase === "game" && (
         <MobileControls
           dpad={{
             up: () => {
@@ -220,8 +268,61 @@ function PongGame({ onExit }: PongGameProps) {
           ]}
         />
       )}
+
+      {controlScheme === "gestures" && state.phase === "game" && (
+        <MobileControls
+          actions={[
+            { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
+            { label: "Restart", onPress: () => setState((prev) => restartMatch(prev)) },
+            { label: "Menu", onPress: onExit }
+          ]}
+        />
+      )}
     </section>
   );
+}
+
+function updateTouchInputFromTouches(
+  touches: { length: number; [index: number]: { clientX: number; clientY: number } | undefined },
+  state: PongState,
+  canvas: HTMLCanvasElement | null,
+  ref: { current: InputState }
+): void {
+  const next: InputState = { p1Up: false, p1Down: false, p2Up: false, p2Down: false };
+  if (!canvas) {
+    ref.current = next;
+    return;
+  }
+  const rect = canvas.getBoundingClientRect();
+
+  for (let i = 0; i < touches.length; i += 1) {
+    const touch = touches[i];
+    if (!touch) {
+      continue;
+    }
+    const x = touch.clientX - rect.left;
+    const y = touch.clientY - rect.top;
+
+    if (state.mode === "2p") {
+      if (x < rect.width / 2) {
+        if (y < state.p1y + PAD_H / 2) {
+          next.p1Up = true;
+        } else {
+          next.p1Down = true;
+        }
+      } else if (y < state.p2y + PAD_H / 2) {
+        next.p2Up = true;
+      } else {
+        next.p2Down = true;
+      }
+    } else if (y < state.p1y + PAD_H / 2) {
+      next.p1Up = true;
+    } else {
+      next.p1Down = true;
+    }
+  }
+
+  ref.current = next;
 }
 
 function drawFrame(canvas: HTMLCanvasElement | null, state: PongState): void {
