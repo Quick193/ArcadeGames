@@ -1,0 +1,18 @@
+.c4-screen { display: grid; gap: 12px; }
+.c4-header { display: flex; justify-content: space-between; gap: 12px; }
+.c4-header h1 { margin: 0; }
+.c4-header p { margin: 6px 0 0; color: #8d99ae; }
+.c4-select { background: #0f1829; border: 1px solid #23324d; border-radius: 12px; padding: 12px; display: grid; gap: 8px; width: min(100%, 360px); }
+.c4-select h2 { margin: 0 0 6px; }
+.c4-select .opt { border: 1px solid #23324d; border-radius: 8px; padding: 10px; }
+.c4-select .opt.active { border-color: #4cc9f0; background: #172a44; }
+.c4-game { display: grid; gap: 10px; }
+.c4-status { display: flex; gap: 14px; flex-wrap: wrap; color: #cdd3df; }
+.c4-board { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; background: #18213a; border: 1px solid #23324d; border-radius: 12px; padding: 10px; max-width: 760px; }
+.c4-hover { position: absolute; top: -10px; transform: translateX(-50%); width: 12px; height: 12px; background: #ffffff; border-radius: 50%; }
+.c4-cell { aspect-ratio: 1/1; background: #0e1628; border-radius: 50%; display: grid; place-items: center; }
+.disc { width: 86%; height: 86%; border-radius: 50%; display: inline-block; }
+.disc.empty { background: #1c2130; }
+.disc.p1 { background: #ff5050; }
+.disc.p2 { background: #ffd63c; }
+.disc.hl { background: #ffffff; }

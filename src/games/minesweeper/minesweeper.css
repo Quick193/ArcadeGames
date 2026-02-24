@@ -1,0 +1,14 @@
+.ms-screen { display: grid; gap: 12px; }
+.ms-header { display: flex; justify-content: space-between; gap: 12px; }
+.ms-header h1 { margin: 0; }
+.ms-header p { margin: 6px 0 0; color: #8d99ae; }
+.ms-select { display: grid; gap: 8px; width: min(100%, 360px); }
+.ms-select .opt { background: #0f1829; border: 1px solid #23324d; border-radius: 10px; padding: 10px; display: grid; gap: 4px; }
+.ms-select .opt.active { border-color: #ff5a5f; background: #28151c; }
+.ms-game { display: grid; gap: 8px; }
+.ms-stats { display: flex; gap: 12px; flex-wrap: wrap; color: #cdd3df; }
+.ms-board { display: grid; gap: 3px; width: min(100%, 900px); }
+.ms-cell { aspect-ratio: 1/1; border: 1px solid #2a364f; border-radius: 3px; background: #182338; color: #edf2f4; font-weight: 700; min-width: 20px; }
+.ms-cell.rev { background: #2b3448; }
+.ms-cell.mine { background: #80202a; }
+.ms-end { padding: 10px; border: 1px solid #23324d; border-radius: 8px; width: fit-content; }

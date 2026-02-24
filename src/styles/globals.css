@@ -64,6 +64,11 @@ canvas {
   padding: 14px;
   background: linear-gradient(180deg, #101b2d 0%, #0c1625 100%);
 }
+.quick-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 
 .settings-panel h2 {
   margin: 0;
@@ -126,6 +131,69 @@ canvas {
   margin: 6px 0 0;
   color: #8d99ae;
   font-size: 0.92rem;
+}
+
+.settings-screen,
+.profile-screen,
+.ach-screen {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  background: #0f1829;
+}
+
+.settings-block h3 {
+  margin: 0 0 8px;
+}
+
+.settings-muted {
+  margin: 0 0 10px;
+  color: var(--muted);
+}
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+  border-bottom: 1px solid #23324d;
+  text-align: left;
+  padding: 8px;
+}
+
+.ach-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.ach-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #23324d;
+  border-radius: 8px;
+  padding: 8px 10px;
 }
 
 @media (max-width: 768px) {

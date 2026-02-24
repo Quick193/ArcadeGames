@@ -12,8 +12,8 @@ export const gameRegistry: GameMeta[] = [
   { id: "endless_metro_run", name: "Endless Metro Run", desc: "Endless platform run", color: "#4895ef", status: "planned" },
   { id: "space_invaders", name: "Space Invaders", desc: "Defend against waves", color: "#fb8500", status: "planned" },
   { id: "game_2048", name: "2048", desc: "Merge to the top", color: "#ffbe0b", status: "implemented" },
-  { id: "minesweeper", name: "Minesweeper", desc: "Clear the minefield", color: "#e63946", status: "planned" },
-  { id: "connect4", name: "Connect 4", desc: "Four in a row wins", color: "#f72585", status: "planned" },
+  { id: "minesweeper", name: "Minesweeper", desc: "Clear the minefield", color: "#e63946", status: "implemented" },
+  { id: "connect4", name: "Connect 4", desc: "Four in a row wins", color: "#f72585", status: "implemented" },
   { id: "sudoku", name: "Sudoku", desc: "Fill the 9x9 grid", color: "#9d4edd", status: "planned" },
   { id: "asteroids", name: "Asteroids", desc: "Destroy all rocks", color: "#4cc9f0", status: "planned" }
 ];
