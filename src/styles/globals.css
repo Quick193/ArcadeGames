@@ -1,0 +1,100 @@
+:root {
+  --bg: #02050d;
+  --panel: #0d1727;
+  --panel-2: #142137;
+  --text: #edf2f4;
+  --muted: #8d99ae;
+  --line: #23324d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at 20% 10%, #18345f 0%, transparent 30%),
+    radial-gradient(circle at 80% 90%, #1f3d55 0%, transparent 25%),
+    linear-gradient(180deg, #08101d 0%, var(--bg) 100%);
+  min-height: 100vh;
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: #1a2a43;
+  border: 1px solid #2b436a;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #4f78b3;
+}
+
+canvas {
+  touch-action: none;
+}
+
+.app-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.hero p {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  margin-top: 22px;
+}
+
+.game-card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.game-card h3 {
+  margin: 0;
+}
+
+.game-card p {
+  margin: 0;
+  color: var(--muted);
+  flex: 1;
+}
+
+.coming-soon {
+  margin-top: 40px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #0f1829;
+  border: 1px solid var(--line);
+}
+
+@media (max-width: 768px) {
+  .app-shell {
+    padding: 14px;
+  }
+}

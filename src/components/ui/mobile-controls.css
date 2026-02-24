@@ -1,0 +1,51 @@
+.mobile-controls {
+  display: none;
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .mobile-controls {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .mobile-dpad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(56px, 1fr));
+    grid-template-areas:
+      ". up ."
+      "left down right";
+    gap: 8px;
+  }
+
+  .ctrl {
+    height: 48px;
+    border-radius: 10px;
+    border: 1px solid #35517d;
+    background: #11233d;
+    color: #edf2f4;
+    font-size: 1rem;
+    touch-action: manipulation;
+  }
+
+  .ctrl:disabled {
+    opacity: 0.35;
+  }
+
+  .ctrl-up { grid-area: up; }
+  .ctrl-left { grid-area: left; }
+  .ctrl-down { grid-area: down; }
+  .ctrl-right { grid-area: right; }
+
+  .mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+    gap: 8px;
+  }
+
+  .ctrl.action {
+    padding: 0 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+}

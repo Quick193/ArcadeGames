@@ -1,0 +1,28 @@
+.flappy-screen {
+  display: grid;
+  gap: 14px;
+}
+
+.flappy-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.flappy-header h1 {
+  margin: 0;
+}
+
+.flappy-header p {
+  margin: 8px 0 0;
+  color: #8d99ae;
+}
+
+.flappy-canvas {
+  width: min(100%, 960px);
+  height: auto;
+  border: 1px solid #2b436a;
+  border-radius: 12px;
+  background: #030711;
+}
