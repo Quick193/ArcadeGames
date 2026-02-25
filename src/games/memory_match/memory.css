@@ -1,0 +1,10 @@
+.memory-screen { display: grid; gap: 12px; }
+.memory-header { display: flex; justify-content: space-between; gap: 12px; }
+.memory-header h1 { margin: 0; }
+.memory-header p { margin: 6px 0 0; color: #8d99ae; }
+.memory-stats { display: flex; gap: 12px; flex-wrap: wrap; color: #cdd3df; }
+.memory-grid { display: grid; grid-template-columns: repeat(4, minmax(74px, 110px)); gap: 12px; }
+.m-card { aspect-ratio: 11/12; border: 1px solid #23324d; border-radius: 10px; background: #121b2c; color: #8d99ae; font-size: 2rem; }
+.m-card.flipped { background: #4cc9f0; color: #041022; }
+.m-card.matched { background: #70e000; color: #07140b; }
+.memory-win { width: fit-content; padding: 8px 12px; border: 1px solid #23324d; border-radius: 8px; }

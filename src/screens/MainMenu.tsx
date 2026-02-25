@@ -13,7 +13,7 @@ function MainMenu({ games, onSelectGame, onOpenSettings, onOpenProfile, onOpenAc
     <main className="main-menu">
       <header className="hero">
         <h1>Modern Arcade</h1>
-        <p>React conversion in progress. Snake, Tetris, Pong, Flappy, 2048, Connect 4, and Minesweeper are playable now.</p>
+        <p>Mobile-first React port. All original titles are now available with touch controls and settings.</p>
       </header>
 
       <section className="settings-panel quick-nav">

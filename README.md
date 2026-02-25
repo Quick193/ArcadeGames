@@ -10,14 +10,20 @@ This repository now contains two app paths:
 The React conversion currently includes:
 
 - Main menu with game registry
-- Snake fully playable in browser (canvas)
-- Tetris playable in browser (canvas, with hold/hard drop/line clear/leveling)
-- Pong playable in browser (1P vs AI and 2P local)
-- Flappy Bird playable in browser (difficulty select + pipe gameplay)
-- 2048 playable in browser (arrow-key merge logic)
-- Placeholders for remaining games
-- Mobile touch controls for converted games
-- Main menu Settings panel with global mobile input mode: `Buttons` or `Gestures`
+- All original game IDs now have playable React implementations:
+  - `snake`, `tetris`, `pong`, `flappy`, `game_2048`, `connect4`, `minesweeper`
+  - `chess`, `breakout`, `memory_match`, `space_invaders`, `asteroids`
+  - `sudoku`, `neon_blob_dash`, `endless_metro_run`
+- Mobile touch controls with global mode toggle: `Buttons` or `Gestures`
+- Profile page with global + per-game table for all games
+- Achievements page with full registry (locked/unlocked/secret/points/progress)
+- Settings parity improvements from Python:
+  - Audio toggles and volume sliders
+  - Display toggles, theme selector, FPS cap selector
+  - Gameplay toggles (ghost piece, chess hints, auto-clear arrows)
+  - Data actions (reset stats, reset achievements, full wipe)
+
+Note: some late-stage ports are lightweight gameplay versions compared to the Python originals.
 
 ### Run
 
@@ -42,12 +48,15 @@ This React app is set up for mobile web play and Vercel deployment.
 5. Output directory: `dist`
 6. Deploy.
 
-### Initial React structure
+### React structure
 
 - `src/App.tsx`: scene-style app shell
 - `src/data/gameRegistry.ts`: ported game registry metadata
 - `src/screens/MainMenu.tsx`: main menu screen
-- `src/games/snake/*`: first converted game
+- `src/games/*`: one folder per converted game
+- `src/screens/SettingsScreen.tsx`: settings + data management
+- `src/screens/ProfileScreen.tsx`: profile + per-game stats view
+- `src/screens/AchievementsScreen.tsx`: full achievement browser
 - `src/styles/globals.css`: global styles/theme
 
 ## Migration approach

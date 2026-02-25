@@ -26,3 +26,13 @@ export function readStats(): StatsData {
     return EMPTY;
   }
 }
+
+export function writeStats(stats: StatsData): void {
+  window.localStorage.setItem(KEY, JSON.stringify(stats));
+}
+
+export function resetStats(): StatsData {
+  const next = { ...EMPTY, games: {} };
+  writeStats(next);
+  return next;
+}

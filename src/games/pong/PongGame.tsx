@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import {
   BALL_R,
@@ -32,6 +33,11 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
   const menuTouchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<PongState>(() => createInitialState());
+  const session = useGameSession("pong");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const moveSelectionUp = (count: number) => {
     setState((prev) => ({ ...prev, selection: (prev.selection + count - 1) % count }));
@@ -51,11 +57,11 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
 
       if (event.key === "q" || event.key === "Escape") {
         if (state.phase === "game") {
-          onExit();
+          exitToMenu();
         } else if (state.phase === "difficulty") {
           setState((prev) => enterModeSelection(prev));
         } else {
-          onExit();
+          exitToMenu();
         }
         return;
       }
@@ -96,6 +102,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
           return;
         }
         if (event.key === "r") {
+          session.restartSession();
           setState((prev) => restartMatch(prev));
         }
       }
@@ -112,7 +119,20 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [onExit, state.phase, state.winner]);
+  }, [exitToMenu, session, state.phase, state.winner]);
+
+  useEffect(() => {
+    if (state.phase !== "game" || !state.winner) {
+      return;
+    }
+    session.recordResult({
+      score: state.p1s,
+      won: state.winner === "P1",
+      extra: {
+        opponent_score: state.p2s
+      }
+    });
+  }, [session, state.p1s, state.p2s, state.phase, state.winner]);
 
   useEffect(() => {
     const tick = () => {
@@ -151,7 +171,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
           <h1>Pong</h1>
           <p>Mode select, difficulty select, then play to 7 points.</p>
         </div>
-        <button type="button" onClick={onExit}>
+        <button type="button" onClick={exitToMenu}>
           Back to Menu
         </button>
       </header>
@@ -219,7 +239,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
                 setState((prev) => (prev.selection === 0 ? enterDifficultySelection(prev) : startGame(prev, "2p", null)));
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}
@@ -263,8 +283,8 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
                 ]
               : []),
             { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
-            { label: "Restart", onPress: () => setState((prev) => restartMatch(prev)) },
-            { label: "Menu", onPress: onExit }
+            { label: "Restart", onPress: () => { session.restartSession(); setState((prev) => restartMatch(prev)); } },
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}
@@ -273,8 +293,8 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
         <MobileControls
           actions={[
             { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
-            { label: "Restart", onPress: () => setState((prev) => restartMatch(prev)) },
-            { label: "Menu", onPress: onExit }
+            { label: "Restart", onPress: () => { session.restartSession(); setState((prev) => restartMatch(prev)); } },
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import { GRID, applyMove, bestTile, createInitialState, type Direction, type Game2048State } from "./game2048.logic";
 import "./game2048.css";
@@ -28,6 +29,11 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
   const [state, setState] = useState<Game2048State>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const session = useGameSession("game_2048");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const move = (dir: Direction) => {
     setState((prev) => applyMove(prev, dir));
@@ -36,11 +42,12 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "q" || event.key === "Escape") {
-        onExit();
+        exitToMenu();
         return;
       }
 
       if (event.key === "r") {
+        session.restartSession();
         setState(createInitialState());
         return;
       }
@@ -58,7 +65,7 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onExit]);
+  }, [exitToMenu, session]);
 
   useEffect(() => {
     if (state.score <= bestScore) {
@@ -71,6 +78,19 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
 
   const topTile = bestTile(state.board);
 
+  useEffect(() => {
+    if (!state.dead && !state.won) {
+      return;
+    }
+    session.recordResult({
+      score: state.score,
+      won: state.won,
+      extra: {
+        max_tile: topTile
+      }
+    });
+  }, [session, state.dead, state.score, state.won, topTile]);
+
   return (
     <section className="g2048-screen">
       <header className="g2048-header">
@@ -78,7 +98,7 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
           <h1>2048</h1>
           <p>Arrow keys move tiles. R restart, Q menu.</p>
         </div>
-        <button type="button" onClick={onExit}>
+        <button type="button" onClick={exitToMenu}>
           Back to Menu
         </button>
       </header>
@@ -156,15 +176,15 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
             right: () => move("right")
           }}
           actions={[
-            { label: "Restart", onPress: () => setState(createInitialState()) },
-            { label: "Menu", onPress: onExit }
+            { label: "Restart", onPress: () => { session.restartSession(); setState(createInitialState()); } },
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       ) : (
         <MobileControls
           actions={[
-            { label: "Restart", onPress: () => setState(createInitialState()) },
-            { label: "Menu", onPress: onExit }
+            { label: "Restart", onPress: () => { session.restartSession(); setState(createInitialState()); } },
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}

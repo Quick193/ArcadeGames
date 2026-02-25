@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import {
   BIRD_R,
@@ -28,6 +29,11 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
 
   const [state, setState] = useState<FlappyState>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
+  const session = useGameSession("flappy");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const selectUp = () => {
     setState((prev) => ({ ...prev, selection: (prev.selection + 2) % 3 }));
@@ -44,7 +50,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "q" || event.key === "Escape") {
-        onExit();
+        exitToMenu();
         return;
       }
 
@@ -64,6 +70,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
       }
 
       if (event.key === "r" && state.diff) {
+        session.restartSession();
         setState((prev) => startGame(prev, prev.diff as Difficulty));
         return;
       }
@@ -83,7 +90,17 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onExit, state.dead, state.diff, state.paused, state.phase]);
+  }, [exitToMenu, session, state.dead, state.diff, state.paused, state.phase]);
+
+  useEffect(() => {
+    if (!state.dead) {
+      return;
+    }
+    session.recordResult({
+      score: state.score,
+      won: false
+    });
+  }, [session, state.dead, state.score]);
 
   useEffect(() => {
     const tick = (time: number) => {
@@ -127,7 +144,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
           <h1>Flappy Bird</h1>
           <p>Select difficulty, then Space to flap through pipes.</p>
         </div>
-        <button type="button" onClick={onExit}>
+        <button type="button" onClick={exitToMenu}>
           Back to Menu
         </button>
       </header>
@@ -177,7 +194,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
           dpad={{ up: selectUp, down: selectDown }}
           actions={[
             { label: "Play", onPress: selectPlay },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       ) : controlScheme === "buttons" ? (
@@ -191,10 +208,11 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
                 if (!state.diff) {
                   return;
                 }
+                session.restartSession();
                 setState((prev) => startGame(prev, prev.diff as Difficulty));
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       ) : (
@@ -207,10 +225,11 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
                 if (!state.diff) {
                   return;
                 }
+                session.restartSession();
                 setState((prev) => startGame(prev, prev.diff as Difficulty));
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}

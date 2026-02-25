@@ -15,6 +15,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   show_ghost_piece: true,
   auto_clear_annotations: false,
   chess_show_hints: true,
+  reset_on_start: false,
   mobile_control_scheme: "buttons"
 };
 
@@ -44,6 +45,12 @@ export function writeSettings(settings: AppSettings): void {
 export function setControlScheme(scheme: ControlScheme): AppSettings {
   const current = readSettings();
   const next = { ...current, mobile_control_scheme: scheme };
+  writeSettings(next);
+  return next;
+}
+
+export function resetSettings(): AppSettings {
+  const next = { ...DEFAULT_SETTINGS };
   writeSettings(next);
   return next;
 }

@@ -21,3 +21,13 @@ export function readAchievements(): AchievementsData {
     return EMPTY;
   }
 }
+
+export function writeAchievements(achievements: AchievementsData): void {
+  window.localStorage.setItem(KEY, JSON.stringify(achievements));
+}
+
+export function resetAchievements(): AchievementsData {
+  const next: AchievementsData = { unlocked: {} };
+  writeAchievements(next);
+  return next;
+}

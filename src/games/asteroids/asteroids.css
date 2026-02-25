@@ -1,0 +1,5 @@
+.aster-screen { display: grid; gap: 12px; }
+.aster-header { display: flex; justify-content: space-between; gap: 12px; }
+.aster-header h1 { margin: 0; }
+.aster-header p { margin: 6px 0 0; color: #8d99ae; }
+.aster-canvas { width: min(100%, 960px); border: 1px solid #23324d; border-radius: 12px; }

@@ -1,0 +1,5 @@
+.breakout-screen { display: grid; gap: 12px; }
+.breakout-header { display: flex; justify-content: space-between; gap: 12px; }
+.breakout-header h1 { margin: 0; }
+.breakout-header p { margin: 6px 0 0; color: #8d99ae; }
+.breakout-canvas { width: min(100%, 960px); border: 1px solid #23324d; border-radius: 12px; }

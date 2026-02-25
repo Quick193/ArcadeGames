@@ -1,0 +1,12 @@
+.sudoku-screen { display: grid; gap: 12px; }
+.sudoku-header { display: flex; justify-content: space-between; gap: 12px; }
+.sudoku-header h1 { margin: 0; }
+.sudoku-header p { margin: 6px 0 0; color: #8d99ae; }
+.sudoku-stats { display: flex; gap: 12px; flex-wrap: wrap; color: #cdd3df; }
+.sudoku-grid { display: grid; grid-template-columns: repeat(9, minmax(34px, 54px)); gap: 2px; }
+.sq { aspect-ratio: 1/1; border: 1px solid #24324f; background: #111a2b; color: #edf2f4; font-size: 1.1rem; }
+.sq.fixed { background: #2b3548; color: #8d99ae; }
+.sq.sel { border-color: #4cc9f0; }
+.sq.wrong { color: #ff5d73; }
+.sudoku-numpad { display: grid; grid-template-columns: repeat(9, minmax(36px, 54px)); gap: 4px; }
+.sudoku-numpad button { padding: 10px 0; }

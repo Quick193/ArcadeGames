@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import {
   COLS,
@@ -32,6 +33,11 @@ function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
   const [bestScore, setBestScore] = useState(() => readBestScore());
 
   const gameOver = state.dead;
+  const session = useGameSession("snake");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
   const speedLabel = useMemo(() => `${(1000 / state.stepIntervalMs).toFixed(1)} steps/s`, [state.stepIntervalMs]);
 
   const applyDirection = (key: string) => {
@@ -50,12 +56,13 @@ function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "q" || event.key === "Escape") {
-        onExit();
+        exitToMenu();
         return;
       }
 
       if (event.key === "r") {
         setState(createInitialState());
+        session.restartSession();
         setIsPaused(false);
         accumulatorRef.current = 0;
         lastTickRef.current = null;
@@ -83,7 +90,20 @@ function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [gameOver, isPaused, onExit]);
+  }, [exitToMenu, gameOver, isPaused, session]);
+
+  useEffect(() => {
+    if (!gameOver) {
+      return;
+    }
+    session.recordResult({
+      score: state.score,
+      won: false,
+      extra: {
+        snake_length: Math.floor(state.score / 10) + 1
+      }
+    });
+  }, [gameOver, session, state.score]);
 
   useEffect(() => {
     if (!gameOver || state.score <= bestScore) {
@@ -135,7 +155,7 @@ function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
           <h1>Snake</h1>
           <p>Arrow keys move. P pause, G grid, R restart, Q exit.</p>
         </div>
-        <button type="button" onClick={onExit}>
+        <button type="button" onClick={exitToMenu}>
           Back to Menu
         </button>
       </header>
@@ -195,12 +215,13 @@ function SnakeGame({ onExit, controlScheme }: SnakeGameProps) {
               label: "Restart",
               onPress: () => {
                 setState(createInitialState());
+                session.restartSession();
                 setIsPaused(false);
                 accumulatorRef.current = 0;
                 lastTickRef.current = null;
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       ) : (

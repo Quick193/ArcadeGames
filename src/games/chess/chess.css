@@ -1,0 +1,10 @@
+.chess-screen { display: grid; gap: 12px; }
+.chess-header { display: flex; justify-content: space-between; gap: 12px; }
+.chess-header h1 { margin: 0; }
+.chess-header p { margin: 6px 0 0; color: #8d99ae; }
+.chess-info { color: #cdd3df; }
+.chess-board { display: grid; grid-template-columns: repeat(8, minmax(38px, 64px)); }
+.chess-cell { aspect-ratio: 1/1; border: none; font-size: clamp(1rem, 3vw, 2rem); }
+.chess-cell.light { background: #f0d9b5; color: #1f2937; }
+.chess-cell.dark { background: #b58863; color: #111827; }
+.chess-cell.sel { outline: 2px solid #4cc9f0; }

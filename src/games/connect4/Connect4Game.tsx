@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import { COLS, aiMove, checkWin, drop, emptyGrid, validCols, winningCells, type Grid } from "./connect4.logic";
 import "./connect4.css";
@@ -30,10 +31,16 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
   const [flashTick, setFlashTick] = useState(0);
   const [aiPending, setAiPending] = useState(false);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const session = useGameSession("connect4");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const winCells = useMemo(() => (winner ? winningCells(grid, winner as 1 | 2) : []), [grid, winner]);
 
   const resetGame = () => {
+    session.restartSession();
     setGrid(emptyGrid());
     setTurn(1);
     setWinner(0);
@@ -118,7 +125,7 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
           setPhase("mode");
           setSel(0);
         } else {
-          onExit();
+          exitToMenu();
         }
         return;
       }
@@ -170,7 +177,17 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [hover, isDraw, mode, onExit, phase, sel, turn, winner]);
+  }, [exitToMenu, hover, isDraw, mode, phase, sel, session, turn, winner]);
+
+  useEffect(() => {
+    if (phase !== "game" || (!winner && !isDraw)) {
+      return;
+    }
+    session.recordResult({
+      score: winner === 1 ? 1 : 0,
+      won: winner === 1
+    });
+  }, [isDraw, phase, session, winner]);
 
   return (
     <section className="c4-screen">
@@ -179,7 +196,7 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
           <h1>Connect 4</h1>
           <p>Line up four discs before your opponent.</p>
         </div>
-        <button type="button" onClick={onExit}>Back to Menu</button>
+        <button type="button" onClick={exitToMenu}>Back to Menu</button>
       </header>
 
       {phase === "mode" && <SelectCard title="CONNECT 4" options={["1 Player vs AI", "2 Players Local"]} sel={sel} />}
@@ -244,7 +261,7 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
       {controlScheme === "buttons" && phase === "game" && (
         <MobileControls
           dpad={{ left: () => setHover((h) => Math.max(0, h - 1)), right: () => setHover((h) => Math.min(COLS - 1, h + 1)) }}
-          actions={[{ label: "Drop", onPress: () => place(hover) }, { label: "Restart", onPress: resetGame }, { label: "Menu", onPress: onExit }]}
+          actions={[{ label: "Drop", onPress: () => place(hover) }, { label: "Restart", onPress: resetGame }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
 
@@ -273,7 +290,7 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
                 }
               }
             },
-            { label: "Back", onPress: onExit }
+            { label: "Back", onPress: exitToMenu }
           ]}
         />
       )}

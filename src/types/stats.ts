@@ -6,6 +6,8 @@ export interface GameStats {
   total_playtime: number;
   current_streak: number;
   best_streak: number;
+  top_scores?: Array<{ score: number; date: string; extra?: Record<string, unknown> }>;
+  extra?: Record<string, number>;
 }
 
 export interface StatsData {

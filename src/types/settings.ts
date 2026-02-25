@@ -13,5 +13,6 @@ export interface AppSettings {
   show_ghost_piece: boolean;
   auto_clear_annotations: boolean;
   chess_show_hints: boolean;
+  reset_on_start: boolean;
   mobile_control_scheme: ControlScheme;
 }

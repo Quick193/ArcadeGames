@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import { DIFFICULTIES, countFlags, createState, placeMines, reveal, toggleFlag, type Diff, type MineState } from "./minesweeper.logic";
 import "./minesweeper.css";
@@ -17,8 +18,14 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
   const [seconds, setSeconds] = useState(0);
   const [mode, setMode] = useState<"reveal" | "flag">("reveal");
   const pressRef = useRef<number | null>(null);
+  const session = useGameSession("minesweeper");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const start = (idx: number) => {
+    session.restartSession();
     const d = DIFFICULTIES[idx] ?? DIFFICULTIES[1];
     setDiff(d);
     setState(createState(d));
@@ -36,7 +43,7 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
     const onKeyDown = (event: KeyboardEvent) => {
       const k = event.key;
       if (k === "q" || k === "Escape") {
-        onExit();
+        exitToMenu();
         return;
       }
       if (phase === "select") {
@@ -53,7 +60,20 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [diff, onExit, phase, sel]);
+  }, [diff, exitToMenu, phase, sel, session]);
+
+  useEffect(() => {
+    if (!state || (!state.dead && !state.won)) {
+      return;
+    }
+    session.recordResult({
+      score: state.won ? Math.max(0, 1000 - seconds * 5) : 0,
+      won: state.won,
+      extra: {
+        difficulty: diff?.name?.toLowerCase() ?? "medium"
+      }
+    });
+  }, [diff?.name, seconds, session, state]);
 
   const flags = useMemo(() => (state ? countFlags(state.flagged) : 0), [state]);
 
@@ -64,7 +84,7 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
           <h1>Minesweeper</h1>
           <p>Reveal all non-mine cells.</p>
         </div>
-        <button type="button" onClick={onExit}>Back to Menu</button>
+        <button type="button" onClick={exitToMenu}>Back to Menu</button>
       </header>
 
       {phase === "select" && (
@@ -162,7 +182,7 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
       {controlScheme === "buttons" && phase === "select" && (
         <MobileControls
           dpad={{ up: () => setSel((s) => (s + 2) % 3), down: () => setSel((s) => (s + 1) % 3) }}
-          actions={[{ label: "Start", onPress: () => start(sel) }, { label: "Menu", onPress: onExit }]}
+          actions={[{ label: "Start", onPress: () => start(sel) }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
 
@@ -171,7 +191,7 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
           actions={[
             { label: mode === "reveal" ? "Switch Flag" : "Switch Reveal", onPress: () => setMode((m) => (m === "reveal" ? "flag" : "reveal")) },
             { label: "Restart", onPress: () => start(DIFFICULTIES.findIndex((d) => d.name === diff.name)) },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}

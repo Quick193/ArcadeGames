@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
+import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import {
   CELL_SIZE,
@@ -40,6 +41,11 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
   const [state, setState] = useState<TetrisState>(() => createInitialState());
   const [isPaused, setIsPaused] = useState(false);
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
+  const session = useGameSession("tetris");
+  const exitToMenu = () => {
+    session.recordPlaytimeOnly();
+    onExit();
+  };
 
   const performAction = (action: "left" | "right" | "down" | "cw" | "ccw" | "drop" | "hold") => {
     if (isPaused || state.gameOver) {
@@ -77,12 +83,13 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
       }
 
       if (key === "q" || key === "Escape") {
-        onExit();
+        exitToMenu();
         return;
       }
 
       if (key === "r") {
         setState(createInitialState());
+        session.restartSession();
         setIsPaused(false);
         fallAccumulatorRef.current = 0;
         lastTimeRef.current = null;
@@ -119,7 +126,20 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
     return () => {
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isPaused, onExit, state.gameOver]);
+  }, [exitToMenu, isPaused, session, state.gameOver]);
+
+  useEffect(() => {
+    if (!state.gameOver) {
+      return;
+    }
+    session.recordResult({
+      score: state.score,
+      won: false,
+      extra: {
+        lines: state.lines
+      }
+    });
+  }, [session, state.gameOver, state.lines, state.score]);
 
   useEffect(() => {
     const run = (time: number) => {
@@ -182,7 +202,7 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
           <h1>Tetris</h1>
           <p>Arrows move. X/Up rotate CW, Z rotate CCW, Space hard drop, C hold.</p>
         </div>
-        <button type="button" onClick={onExit}>
+        <button type="button" onClick={exitToMenu}>
           Back to Menu
         </button>
       </header>
@@ -248,12 +268,13 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
               label: "Restart",
               onPress: () => {
                 setState(createInitialState());
+                session.restartSession();
                 setIsPaused(false);
                 fallAccumulatorRef.current = 0;
                 lastTimeRef.current = null;
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       ) : (
@@ -266,12 +287,13 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
               label: "Restart",
               onPress: () => {
                 setState(createInitialState());
+                session.restartSession();
                 setIsPaused(false);
                 fallAccumulatorRef.current = 0;
                 lastTimeRef.current = null;
               }
             },
-            { label: "Menu", onPress: onExit }
+            { label: "Menu", onPress: exitToMenu }
           ]}
         />
       )}

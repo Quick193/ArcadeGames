@@ -27,3 +27,9 @@ export function readProfile(): ProfileData {
 export function writeProfile(profile: ProfileData): void {
   window.localStorage.setItem(KEY, JSON.stringify(profile));
 }
+
+export function resetProfile(): ProfileData {
+  const next = { ...DEFAULT_PROFILE };
+  writeProfile(next);
+  return next;
+}
