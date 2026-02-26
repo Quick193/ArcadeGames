@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
 import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
@@ -28,7 +28,6 @@ const COLORS: Record<number, { bg: string; fg: string }> = {
 function Game2048({ onExit, controlScheme }: Game2048Props) {
   const [state, setState] = useState<Game2048State>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const session = useGameSession("game_2048");
   const exitToMenu = () => {
     session.recordPlaytimeOnly();
@@ -113,34 +112,6 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
         <div
           className="g2048-board"
           style={{ gridTemplateColumns: `repeat(${GRID}, 1fr)` }}
-          onTouchStart={(event) => {
-            if (controlScheme !== "gestures") {
-              return;
-            }
-            event.preventDefault();
-            const touch = event.touches[0];
-            touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-          }}
-          onTouchEnd={(event) => {
-            if (controlScheme !== "gestures" || !touchStartRef.current) {
-              return;
-            }
-            event.preventDefault();
-            const touch = event.changedTouches[0];
-            const dx = touch.clientX - touchStartRef.current.x;
-            const dy = touch.clientY - touchStartRef.current.y;
-            touchStartRef.current = null;
-
-            const threshold = 24;
-            if (Math.abs(dx) < threshold && Math.abs(dy) < threshold) {
-              return;
-            }
-            if (Math.abs(dx) > Math.abs(dy)) {
-              move(dx > 0 ? "right" : "left");
-            } else {
-              move(dy > 0 ? "down" : "up");
-            }
-          }}
         >
           {state.board.flatMap((row, r) =>
             row.map((value, c) => {
@@ -182,14 +153,7 @@ function Game2048({ onExit, controlScheme }: Game2048Props) {
             { label: "Menu", onPress: exitToMenu }
           ]}
         />
-      ) : (
-        <MobileControls
-          actions={[
-            { label: "Restart", onPress: () => { session.restartSession(); setState(createInitialState()); } },
-            { label: "Menu", onPress: exitToMenu }
-          ]}
-        />
-      )}
+      ) : null}
     </section>
   );
 }

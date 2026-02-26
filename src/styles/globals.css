@@ -159,6 +159,11 @@ body.game-active .app-shell {
   flex: 1;
 }
 
+.game-card p.game-meta {
+  flex: 0;
+  font-size: 0.92rem;
+}
+
 .snake-header,
 .tetris-header,
 .pong-header,
@@ -235,12 +240,6 @@ body.game-active .app-shell {
 
 .ach-toast small {
   color: var(--muted);
-}
-
-.gesture-hint {
-  margin: 6px 0 0;
-  color: #8d99ae;
-  font-size: 0.92rem;
 }
 
 .settings-screen,

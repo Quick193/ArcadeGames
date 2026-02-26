@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
 import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
@@ -17,7 +17,6 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
   const [state, setState] = useState<MineState | null>(null);
   const [seconds, setSeconds] = useState(0);
   const [mode, setMode] = useState<"reveal" | "flag">("reveal");
-  const pressRef = useRef<number | null>(null);
   const session = useGameSession("minesweeper");
   const exitToMenu = () => {
     session.recordPlaytimeOnly();
@@ -141,31 +140,6 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
                       e.preventDefault();
                       if (state.dead || state.won) return;
                       setState((prev) => (prev ? toggleFlag(prev, r, c) : prev));
-                    }}
-                    onTouchStart={(event) => {
-                      if (controlScheme !== "gestures") return;
-                      event.preventDefault();
-                      pressRef.current = window.setTimeout(() => {
-                        setState((prev) => (prev ? toggleFlag(prev, r, c) : prev));
-                      }, 350);
-                    }}
-                    onTouchEnd={(event) => {
-                      if (controlScheme !== "gestures") return;
-                      event.preventDefault();
-                      if (pressRef.current != null) {
-                        window.clearTimeout(pressRef.current);
-                        pressRef.current = null;
-                        setState((prev) => {
-                          if (!prev || prev.dead || prev.won) return prev;
-                          let next = prev;
-                          if (next.firstClick) {
-                            const b = next.board.map((rr) => [...rr]);
-                            placeMines(b, r, c, diff.mines);
-                            next = { ...next, firstClick: false, board: b };
-                          }
-                          return reveal(next, r, c);
-                        });
-                      }
                     }}
                   >
                     {rev ? (cell === -1 ? "*" : cell === 0 ? "" : cell) : flag ? "F" : ""}

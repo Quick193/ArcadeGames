@@ -1,15 +1,18 @@
 import type { ProfileData } from "../types/profile";
 import type { StatsData } from "../types/stats";
 import { GAME_DISPLAY_NAMES, KNOWN_GAMES } from "../data/gameDisplayNames";
+import type { AchievementsData } from "../services/storage/achievementsStorage";
+import { ACHIEVEMENT_REGISTRY } from "../data/achievementsRegistry";
 
 interface ProfileScreenProps {
   profile: ProfileData;
   stats: StatsData;
+  achievements: AchievementsData;
   onChangeProfile: (next: ProfileData) => void;
   onBack: () => void;
 }
 
-function ProfileScreen({ profile, stats, onChangeProfile, onBack }: ProfileScreenProps) {
+function ProfileScreen({ profile, stats, achievements, onChangeProfile, onBack }: ProfileScreenProps) {
   const games = KNOWN_GAMES.map((id) => {
     const g = stats.games[id];
     const played = g?.games_played ?? 0;
@@ -24,6 +27,14 @@ function ProfileScreen({ profile, stats, onChangeProfile, onBack }: ProfileScree
   const totalWins = games.reduce((sum, g) => sum + g.won, 0);
   const overallWinRate = stats.total_games > 0 ? `${Math.floor((totalWins / stats.total_games) * 100)}%` : "0%";
   const favourite = games.find((g) => g.played > 0)?.name ?? "-";
+  const totalSeconds = Math.max(0, Math.floor(stats.global_playtime));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const playtimeFormatted = hours > 0 ? `${hours}h ${String(minutes).padStart(2, "0")}m` : `${minutes}m`;
+  const unlockedCount = Object.keys(achievements.unlocked).length;
+  const totalAchievements = ACHIEVEMENT_REGISTRY.length;
+  const achievementPoints = ACHIEVEMENT_REGISTRY.filter((a) => achievements.unlocked[a.id]).reduce((sum, a) => sum + a.points, 0);
+  const achievementProgress = totalAchievements > 0 ? Math.round((unlockedCount / totalAchievements) * 100) : 0;
 
   return (
     <section className="profile-screen">
@@ -64,8 +75,18 @@ function ProfileScreen({ profile, stats, onChangeProfile, onBack }: ProfileScree
         <p>Total Games: {stats.total_games}</p>
         <p>Total Wins: {totalWins}</p>
         <p>Win Rate: {overallWinRate}</p>
-        <p>Total Playtime: {Math.round(stats.global_playtime / 60)}m</p>
+        <p>Total Playtime: {playtimeFormatted}</p>
         <p>Favourite Game: {favourite}</p>
+      </section>
+
+      <section className="settings-block">
+        <h3>Achievements</h3>
+        <p>Unlocked: {unlockedCount}/{totalAchievements}</p>
+        <p>Points: {achievementPoints}</p>
+        <p>Progress: {achievementProgress}%</p>
+        <div className="ach-progress">
+          <div className="ach-progress-fill" style={{ width: `${achievementProgress}%` }} />
+        </div>
       </section>
 
       <section className="settings-block">

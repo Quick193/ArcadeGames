@@ -54,10 +54,12 @@ function MainMenu({
       <section className="grid">
         {games.map((game) => {
           const isImplemented = game.status === "implemented";
+          const bestScore = stats.games[game.id]?.best_score ?? 0;
           return (
             <article key={game.id} className="game-card" style={{ borderColor: game.color }}>
               <h3>{game.name}</h3>
               <p>{game.desc}</p>
+              <p className="game-meta">Best Score: {bestScore > 0 ? bestScore.toLocaleString() : "—"}</p>
               <button
                 type="button"
                 onClick={() => {

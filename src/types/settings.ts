@@ -1,4 +1,4 @@
-export type ControlScheme = "buttons" | "gestures";
+export type ControlScheme = "buttons";
 
 export interface AppSettings {
   music_volume: number;

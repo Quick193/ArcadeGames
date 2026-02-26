@@ -36,7 +36,6 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
   const frameRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
   const fallAccumulatorRef = useRef(0);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<TetrisState>(() => createInitialState());
   const [isPaused, setIsPaused] = useState(false);
@@ -221,36 +220,6 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
         width={CANVAS_W}
         height={CANVAS_H}
         className="tetris-canvas"
-        onTouchStart={(event) => {
-          if (controlScheme !== "gestures") {
-            return;
-          }
-          event.preventDefault();
-          const touch = event.touches[0];
-          touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-        }}
-        onTouchEnd={(event) => {
-          if (controlScheme !== "gestures" || !touchStartRef.current) {
-            return;
-          }
-          event.preventDefault();
-          const touch = event.changedTouches[0];
-          const dx = touch.clientX - touchStartRef.current.x;
-          const dy = touch.clientY - touchStartRef.current.y;
-          touchStartRef.current = null;
-
-          if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
-            performAction("cw");
-            return;
-          }
-          if (Math.abs(dx) > Math.abs(dy)) {
-            performAction(dx > 0 ? "right" : "left");
-          } else if (dy > 0) {
-            performAction("down");
-          } else {
-            performAction("drop");
-          }
-        }}
       />
 
       {controlScheme === "buttons" ? (

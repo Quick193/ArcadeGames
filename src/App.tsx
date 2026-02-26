@@ -163,6 +163,7 @@ function App() {
         <ProfileScreen
           profile={profile}
           stats={stats}
+          achievements={achievements}
           onChangeProfile={(next) => {
             setProfile(next);
             writeProfile(next);

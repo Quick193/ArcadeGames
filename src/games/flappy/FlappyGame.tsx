@@ -25,7 +25,6 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastRef = useRef<number | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const [state, setState] = useState<FlappyState>(() => createInitialState());
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
@@ -154,41 +153,6 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
         width={WIDTH}
         height={HEIGHT}
         className="flappy-canvas"
-        onTouchStart={(event) => {
-          if (controlScheme !== "gestures") {
-            return;
-          }
-          event.preventDefault();
-          const touch = event.touches[0];
-          touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-        }}
-        onTouchEnd={(event) => {
-          if (controlScheme !== "gestures" || !touchStartRef.current) {
-            return;
-          }
-          event.preventDefault();
-          const touch = event.changedTouches[0];
-          const dx = touch.clientX - touchStartRef.current.x;
-          const dy = touch.clientY - touchStartRef.current.y;
-          touchStartRef.current = null;
-
-          if (state.phase === "select") {
-            if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 20) {
-              if (dy > 0) {
-                selectDown();
-              } else {
-                selectUp();
-              }
-            } else {
-              selectPlay();
-            }
-            return;
-          }
-
-          if (!state.dead && !state.paused) {
-            setState((prev) => flap(prev));
-          }
-        }}
       />
 
       {controlScheme === "buttons" && state.phase === "select" ? (
@@ -217,24 +181,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
             { label: "Menu", onPress: exitToMenu }
           ]}
         />
-      ) : (
-        <MobileControls
-          actions={[
-            { label: state.paused ? "Resume" : "Pause", onPress: () => setState((prev) => ({ ...prev, paused: !prev.paused })) },
-            {
-              label: "Restart",
-              onPress: () => {
-                if (!state.diff) {
-                  return;
-                }
-                session.restartSession();
-                setState((prev) => startGame(prev, prev.diff as Difficulty));
-              }
-            },
-            { label: "Menu", onPress: exitToMenu }
-          ]}
-        />
-      )}
+      ) : null}
     </section>
   );
 }

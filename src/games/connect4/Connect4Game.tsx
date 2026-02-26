@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MobileControls from "../../components/ui/MobileControls";
 import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
@@ -30,7 +30,6 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
   const [hover, setHover] = useState(Math.floor(COLS / 2));
   const [flashTick, setFlashTick] = useState(0);
   const [aiPending, setAiPending] = useState(false);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const session = useGameSession("connect4");
   const exitToMenu = () => {
     session.recordPlaytimeOnly();
@@ -224,25 +223,6 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
               const x = e.clientX - rect.left;
               const c = Math.floor(x / (rect.width / COLS));
               if (c >= 0 && c < COLS) place(c);
-            }}
-            onTouchStart={(event) => {
-              if (controlScheme !== "gestures") return;
-              event.preventDefault();
-              const touch = event.touches[0];
-              touchStartRef.current = { x: touch.clientX, y: touch.clientY };
-            }}
-            onTouchEnd={(event) => {
-              if (controlScheme !== "gestures" || !touchStartRef.current) return;
-              event.preventDefault();
-              const touch = event.changedTouches[0];
-              const dx = touch.clientX - touchStartRef.current.x;
-              const dy = touch.clientY - touchStartRef.current.y;
-              touchStartRef.current = null;
-              if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 16) {
-                setHover((h) => Math.max(0, Math.min(COLS - 1, h + (dx > 0 ? 1 : -1))));
-              } else {
-                place(hover);
-              }
             }}
           >
             <div className="c4-hover" style={{ left: `calc(${(hover / COLS) * 100}% + (100% / ${COLS} / 2))` }} />
