@@ -62,15 +62,7 @@ function App() {
   useEffect(() => {
     const active = Boolean(activeGame);
     document.body.classList.toggle("game-active", active);
-    if (!active) {
-      return;
-    }
-    const preventTouchScroll = (event: TouchEvent) => {
-      event.preventDefault();
-    };
-    document.addEventListener("touchmove", preventTouchScroll, { passive: false });
     return () => {
-      document.removeEventListener("touchmove", preventTouchScroll);
       document.body.classList.remove("game-active");
     };
   }, [activeGame]);

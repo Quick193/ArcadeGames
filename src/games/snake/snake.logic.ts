@@ -1,6 +1,6 @@
 export const TILE_SIZE = 20;
-export const COLS = 48;
-export const ROWS = 30;
+export const COLS = 24;
+export const ROWS = 36;
 
 export const BASE_INTERVAL_MS = 100;
 export const MIN_INTERVAL_MS = 48;

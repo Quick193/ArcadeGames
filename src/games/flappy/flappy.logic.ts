@@ -1,5 +1,5 @@
-export const WIDTH = 960;
-export const HEIGHT = 600;
+export const WIDTH = 540;
+export const HEIGHT = 900;
 export const PIPE_W = 70;
 export const BIRD_R = 14;
 

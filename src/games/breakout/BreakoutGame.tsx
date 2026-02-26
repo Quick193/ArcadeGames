@@ -4,8 +4,12 @@ import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import "./breakout.css";
 
-const W = 960;
-const H = 600;
+const W = 540;
+const H = 900;
+const PAD_W = 110;
+const PAD_H = 14;
+const PAD_Y = H - 72;
+const BALL_R = 9;
 
 interface BreakoutGameProps {
   onExit: () => void;
@@ -17,8 +21,8 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
 
-  const [padX, setPadX] = useState(430);
-  const [ball, setBall] = useState({ x: 480, y: 470, vx: 4.8, vy: -4.8 });
+  const [padX, setPadX] = useState(W / 2 - PAD_W / 2);
+  const [ball, setBall] = useState({ x: W / 2, y: PAD_Y - 52, vx: 4.6, vy: -4.6 });
   const [bricks, setBricks] = useState(() => buildBricks());
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -32,8 +36,8 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
 
   const resetAll = () => {
     session.restartSession();
-    setPadX(430);
-    setBall({ x: 480, y: 470, vx: 4.8 * (Math.random() < 0.5 ? -1 : 1), vy: -4.8 });
+    setPadX(W / 2 - PAD_W / 2);
+    setBall({ x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 });
     setBricks(buildBricks());
     setScore(0);
     setLives(3);
@@ -75,7 +79,7 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
           let next = p;
           if (keysRef.current.has("ArrowLeft") || keysRef.current.has("a")) next -= 8;
           if (keysRef.current.has("ArrowRight") || keysRef.current.has("d")) next += 8;
-          return Math.max(40, Math.min(W - 40 - 130, next));
+          return Math.max(24, Math.min(W - PAD_W - 24, next));
         });
 
         setBall((prevBall) => {
@@ -97,10 +101,10 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
             vy = Math.abs(vy);
           }
 
-          if (y >= 520 && y <= 540 && x >= padX && x <= padX + 130 && vy > 0) {
+          if (y >= PAD_Y - 2 && y <= PAD_Y + PAD_H + 4 && x >= padX && x <= padX + PAD_W && vy > 0) {
             vy = -Math.abs(vy);
-            const hit = (x - padX) / 130;
-            vx = (hit - 0.5) * 11;
+            const hit = (x - padX) / PAD_W;
+            vx = (hit - 0.5) * 10.2;
           }
 
           setBricks((prev) => {
@@ -126,7 +130,7 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
               if (nl <= 0) setDead(true);
               return nl;
             });
-            return { x: 480, y: 470, vx: 4.8 * (Math.random() < 0.5 ? -1 : 1), vy: -4.8 };
+            return { x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 };
           }
 
           return { x, y, vx, vy };
@@ -157,7 +161,7 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
 
       {controlScheme === "buttons" && (
         <MobileControls
-          dpad={{ left: () => setPadX((p) => Math.max(40, p - 26)), right: () => setPadX((p) => Math.min(W - 170, p + 26)) }}
+          dpad={{ left: () => setPadX((p) => Math.max(24, p - 22)), right: () => setPadX((p) => Math.min(W - PAD_W - 24, p + 22)) }}
           actions={[{ label: "Restart", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
@@ -167,16 +171,16 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
 
 function buildBricks() {
   const bricks: Array<{ x: number; y: number; w: number; h: number; c: string }> = [];
-  const cols = 10;
-  const rows = 6;
-  const marginX = 100;
+  const cols = 7;
+  const rows = 8;
+  const marginX = 24;
   const gap = 6;
   const bw = (W - marginX * 2 - gap * (cols - 1)) / cols;
   const colors = ["#4cc9f0", "#4895ef", "#70e000", "#ffd166", "#fb8500", "#f72585"];
 
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
-      bricks.push({ x: marginX + c * (bw + gap), y: 90 + r * 30, w: bw, h: 24, c: colors[r % colors.length] });
+      bricks.push({ x: marginX + c * (bw + gap), y: 110 + r * 30, w: bw, h: 24, c: colors[r % colors.length] });
     }
   }
   return bricks;
@@ -213,11 +217,11 @@ function draw(
   }
 
   ctx.fillStyle = "#b5179e";
-  ctx.fillRect(state.padX, 522, 130, 16);
+  ctx.fillRect(state.padX, PAD_Y, PAD_W, PAD_H);
 
   ctx.fillStyle = "#edf2f4";
   ctx.beginPath();
-  ctx.arc(state.ball.x, state.ball.y, 10, 0, Math.PI * 2);
+  ctx.arc(state.ball.x, state.ball.y, BALL_R, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = "#8d99ae";

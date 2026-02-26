@@ -4,8 +4,9 @@ import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import "./space.css";
 
-const W = 960;
-const H = 600;
+const W = 540;
+const H = 900;
+const SHIP_Y = H - 78;
 
 interface SpaceInvadersGameProps {
   onExit: () => void;
@@ -17,7 +18,7 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
 
-  const [shipX, setShipX] = useState(460);
+  const [shipX, setShipX] = useState(W / 2 - 22);
   const [wave, setWave] = useState(1);
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -33,7 +34,7 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
 
   const resetAll = () => {
     session.restartSession();
-    setShipX(460);
+    setShipX(W / 2 - 22);
     setWave(1);
     setScore(0);
     setLives(3);
@@ -49,7 +50,7 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
       if (e.key === "q" || e.key === "Escape") exitToMenu();
       if (e.key === "r") resetAll();
       if (e.key === " " && !dead) {
-        setBullets((b) => (b.length < 6 ? [...b, { x: shipX + 20, y: 510 }] : b));
+        setBullets((b) => (b.length < 6 ? [...b, { x: shipX + 20, y: SHIP_Y - 10 }] : b));
       }
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key);
@@ -127,7 +128,7 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
         }
 
         setEnemyBullets((prev) => {
-          const hit = prev.some((b) => b.x >= shipX && b.x <= shipX + 44 && b.y >= 520 && b.y <= 548);
+          const hit = prev.some((b) => b.x >= shipX && b.x <= shipX + 44 && b.y >= SHIP_Y && b.y <= SHIP_Y + 28);
           if (hit) {
             setLives((l) => {
               const nl = l - 1;
@@ -161,7 +162,7 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
       {controlScheme === "buttons" && (
         <MobileControls
           dpad={{ left: () => setShipX((x) => Math.max(8, x - 24)), right: () => setShipX((x) => Math.min(W - 52, x + 24)) }}
-          actions={[{ label: "Shoot", onPress: () => setBullets((b) => [...b, { x: shipX + 20, y: 510 }]) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
+          actions={[{ label: "Shoot", onPress: () => setBullets((b) => [...b, { x: shipX + 20, y: SHIP_Y - 10 }]) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
     </section>
@@ -170,14 +171,14 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
 
 function spawnWave(w: number) {
   const out: Array<{ x: number; y: number; dir: number }> = [];
-  const rows = Math.min(4, 2 + Math.floor(w / 2));
+  const rows = Math.min(5, 2 + Math.floor(w / 2));
   const cols = Math.min(10, 6 + w);
   const step = 54;
   const gridW = cols * step;
   const sx = (W - gridW) / 2;
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
-      out.push({ x: sx + c * step, y: 80 + r * 42, dir: 1 });
+      out.push({ x: sx + c * step, y: 96 + r * 46, dir: 1 });
     }
   }
   return out;
@@ -217,9 +218,9 @@ function draw(
 
   ctx.fillStyle = "#4cc9f0";
   ctx.beginPath();
-  ctx.moveTo(s.shipX + 22, 520);
-  ctx.lineTo(s.shipX + 2, 548);
-  ctx.lineTo(s.shipX + 42, 548);
+  ctx.moveTo(s.shipX + 22, SHIP_Y);
+  ctx.lineTo(s.shipX + 2, SHIP_Y + 28);
+  ctx.lineTo(s.shipX + 42, SHIP_Y + 28);
   ctx.closePath();
   ctx.fill();
 

@@ -385,7 +385,7 @@ body.game-active .app-shell {
   .runner-canvas {
     width: 100%;
     max-width: 100%;
-    max-height: 46dvh;
+    max-height: 52dvh;
     border-radius: 10px;
   }
 

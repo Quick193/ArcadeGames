@@ -4,9 +4,9 @@ import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import "../neon_blob_dash/runner.css";
 
-const W = 960;
-const H = 600;
-const GY = 558;
+const W = 540;
+const H = 900;
+const GY = H - 42;
 
 interface EndlessMetroRunGameProps {
   onExit: () => void;
@@ -18,7 +18,7 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
 
-  const [player, setPlayer] = useState({ x: 180, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
+  const [player, setPlayer] = useState({ x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
   const [speed, setSpeed] = useState(5.2);
   const [obs, setObs] = useState<Array<{ x:number; y:number; w:number; h:number; t:"spike"|"enemy" }>>([]);
   const [coins, setCoins] = useState<Array<{x:number;y:number}>>([]);
@@ -33,7 +33,7 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
 
   const reset = () => {
     session.restartSession();
-    setPlayer({ x: 180, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
+    setPlayer({ x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
     setSpeed(5.2); setObs([]); setCoins([]); setScore(0); setLives(3); setDead(false);
   };
 
@@ -71,7 +71,7 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
           let nx=p.x; let nvy=Math.min(18,p.vy+0.78); let ny=p.y+nvy;
           if(keysRef.current.has("ArrowLeft")||keysRef.current.has("a")) nx-=4;
           if(keysRef.current.has("ArrowRight")||keysRef.current.has("d")) nx+=4;
-          nx=Math.max(70,Math.min(W-96,nx));
+          nx=Math.max(36,Math.min(W-76,nx));
           if(ny+p.h>=GY){ny=GY-p.h; nvy=0;}
           return {...p,x:nx,y:ny,vy:nvy};
         });
@@ -113,7 +113,7 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
     <section className="runner-screen">
       <header className="runner-header"><div><h1>Endless Metro Run</h1><p>Run, jump, collect coins, survive.</p></div><button type="button" onClick={exitToMenu}>Back to Menu</button></header>
       <canvas ref={canvasRef} className="runner-canvas" width={W} height={H} />
-      {controlScheme==="buttons" && <MobileControls dpad={{left:()=>setPlayer((p)=>({...p,x:Math.max(70,p.x-24)})),right:()=>setPlayer((p)=>({...p,x:Math.min(W-96,p.x+24)}))}} actions={[{label:"Jump",onPress:()=>setPlayer((p)=>p.y+p.h>=GY-1?{...p,vy:-15.5}:p)},{label:"Reset",onPress:reset},{label:"Menu",onPress:exitToMenu}]} />}
+      {controlScheme==="buttons" && <MobileControls dpad={{left:()=>setPlayer((p)=>({...p,x:Math.max(36,p.x-22)})),right:()=>setPlayer((p)=>({...p,x:Math.min(W-76,p.x+22)}))}} actions={[{label:"Jump",onPress:()=>setPlayer((p)=>p.y+p.h>=GY-1?{...p,vy:-15.5}:p)},{label:"Reset",onPress:reset},{label:"Menu",onPress:exitToMenu}]} />}
     </section>
   );
 }

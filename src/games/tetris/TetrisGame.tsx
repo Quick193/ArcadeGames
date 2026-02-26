@@ -21,8 +21,8 @@ import "./tetris.css";
 
 const BOARD_W = COLS * CELL_SIZE;
 const BOARD_H = ROWS * CELL_SIZE;
-const SIDE_W = 180;
-const HOLD_W = 130;
+const SIDE_W = 96;
+const HOLD_W = 74;
 const CANVAS_W = HOLD_W + 20 + BOARD_W + 20 + SIDE_W;
 const CANVAS_H = BOARD_H;
 

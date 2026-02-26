@@ -4,9 +4,9 @@ import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import "./runner.css";
 
-const W = 960;
-const H = 600;
-const GY = 548;
+const W = 540;
+const H = 900;
+const GY = H - 52;
 
 interface NeonBlobDashGameProps {
   onExit: () => void;
@@ -71,7 +71,7 @@ function NeonBlobDashGame({ onExit, controlScheme }: NeonBlobDashGameProps) {
           const moved = prev.map((o) => ({ ...o, x: o.x - 8 }));
           const kept = moved.filter((o) => o.x + o.w > -40);
           if (Math.random() < 0.02) kept.push({ x: W + 20, y: GY - (Math.random()<0.7?52:70), w: 34, h: Math.random()<0.7?52:26 });
-          const dino = { x: 130, y, w: duck ? 60 : 44, h: duck ? 30 : 50 };
+          const dino = { x: 92, y, w: duck ? 60 : 44, h: duck ? 30 : 50 };
           if (kept.some((o) => overlap(dino, o))) setDead(true);
           return kept;
         });
@@ -98,7 +98,7 @@ function drawRunner(canvas: HTMLCanvasElement | null, s: any){
   if(!canvas)return; const ctx=canvas.getContext("2d"); if(!ctx)return;
   ctx.fillStyle="#070c1a"; ctx.fillRect(0,0,W,H);
   ctx.fillStyle="#232b3c"; ctx.fillRect(0,GY,W,H-GY);
-  ctx.fillStyle="#4cc9f0"; ctx.fillRect(130,s.y,s.duck?60:44,s.duck?30:50);
+  ctx.fillStyle="#4cc9f0"; ctx.fillRect(92,s.y,s.duck?60:44,s.duck?30:50);
   for(const o of s.obs){ ctx.fillStyle="#70e000"; ctx.fillRect(o.x,o.y,o.w,o.h); }
   ctx.fillStyle="#8d99ae"; ctx.font="bold 18px Trebuchet MS"; ctx.fillText(`${s.title}  Score ${Math.floor(s.score/6)}`,16,28);
   if(s.dead){ ctx.fillStyle="rgba(0,0,0,0.58)"; ctx.fillRect(0,0,W,H); ctx.fillStyle="#ff4d6d"; ctx.font="bold 48px Trebuchet MS"; ctx.textAlign="center"; ctx.fillText("GAME OVER",W/2,H/2); ctx.textAlign="left"; }

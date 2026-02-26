@@ -4,8 +4,8 @@ import { useGameSession } from "../../services/progression/useGameSession";
 import type { ControlScheme } from "../../types/settings";
 import "./asteroids.css";
 
-const W = 960;
-const H = 600;
+const W = 540;
+const H = 900;
 
 interface AsteroidsGameProps {
   onExit: () => void;

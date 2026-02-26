@@ -1,6 +1,6 @@
 export const ROWS = 20;
 export const COLS = 10;
-export const CELL_SIZE = 30;
+export const CELL_SIZE = 24;
 
 export const BASE_FALL_MS = 500;
 export const SPEED_DELTA_MS = 45;

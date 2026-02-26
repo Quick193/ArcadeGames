@@ -1,5 +1,5 @@
-export const WIDTH = 960;
-export const HEIGHT = 600;
+export const WIDTH = 540;
+export const HEIGHT = 900;
 
 export const PAD_W = 12;
 export const PAD_H = 90;
