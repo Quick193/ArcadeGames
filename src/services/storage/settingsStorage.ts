@@ -27,11 +27,10 @@ export function readSettings(): AppSettings {
 
   try {
     const parsed = JSON.parse(raw) as Partial<AppSettings>;
-    const scheme = parsed.mobile_control_scheme === "gestures" ? "gestures" : "buttons";
     return {
       ...DEFAULT_SETTINGS,
       ...parsed,
-      mobile_control_scheme: scheme
+      mobile_control_scheme: "buttons"
     };
   } catch {
     return DEFAULT_SETTINGS;

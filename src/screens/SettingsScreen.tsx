@@ -115,23 +115,7 @@ function SettingsScreen({
 
       <section className="settings-block">
         <h3>Mobile Controls</h3>
-        <p className="settings-muted">Applies to all supported games.</p>
-        <div className="segmented">
-          <button
-            type="button"
-            className={settings.mobile_control_scheme === "buttons" ? "active" : ""}
-            onClick={() => set("mobile_control_scheme", "buttons")}
-          >
-            Buttons
-          </button>
-          <button
-            type="button"
-            className={settings.mobile_control_scheme === "gestures" ? "active" : ""}
-            onClick={() => set("mobile_control_scheme", "gestures")}
-          >
-            Gestures
-          </button>
-        </div>
+        <p className="settings-muted">Buttons-only controls are enabled across all games.</p>
       </section>
 
       <section className="settings-block">

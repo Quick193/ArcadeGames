@@ -66,16 +66,14 @@ function App() {
       return;
     }
     const preventTouchScroll = (event: TouchEvent) => {
-      if (settings.mobile_control_scheme === "gestures") {
-        event.preventDefault();
-      }
+      event.preventDefault();
     };
     document.addEventListener("touchmove", preventTouchScroll, { passive: false });
     return () => {
       document.removeEventListener("touchmove", preventTouchScroll);
       document.body.classList.remove("game-active");
     };
-  }, [activeGame, settings.mobile_control_scheme]);
+  }, [activeGame]);
 
   useEffect(() => {
     const onUnlocked = (event: Event) => {
