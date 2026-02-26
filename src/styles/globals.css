@@ -11,6 +11,12 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
   font-family: "Trebuchet MS", "Segoe UI", sans-serif;
@@ -37,6 +43,15 @@ button:hover {
   border-color: #4f78b3;
 }
 
+input[type="text"] {
+  min-width: 180px;
+  color: var(--text);
+  background: #1a2a43;
+  border: 1px solid #2b436a;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+
 input[type="range"] {
   width: min(220px, 48vw);
 }
@@ -52,12 +67,24 @@ select {
 
 canvas {
   touch-action: none;
+  max-width: 100%;
+  height: auto;
 }
 
 .app-shell {
   max-width: 1180px;
   margin: 0 auto;
   padding: 24px;
+}
+
+body.game-active {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body.game-active .app-shell {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .hero h1 {
@@ -130,6 +157,41 @@ canvas {
   margin: 0;
   color: var(--muted);
   flex: 1;
+}
+
+.snake-header,
+.tetris-header,
+.pong-header,
+.flappy-header,
+.c4-header,
+.ms-header,
+.g2048-header,
+.breakout-header,
+.space-header,
+.aster-header,
+.runner-header,
+.sudoku-header,
+.chess-header {
+  flex-wrap: wrap;
+}
+
+.snake-canvas,
+.tetris-canvas,
+.pong-canvas,
+.flappy-canvas,
+.breakout-canvas,
+.space-canvas,
+.aster-canvas,
+.runner-canvas {
+  max-height: min(62dvh, 720px);
+}
+
+.g2048-board,
+.c4-board,
+.ms-board,
+.sudoku-grid,
+.chess-board {
+  touch-action: none;
 }
 
 .coming-soon {
@@ -307,7 +369,8 @@ canvas {
   }
 
   input[type="range"],
-  select {
+  select,
+  input[type="text"] {
     width: 100%;
   }
 }

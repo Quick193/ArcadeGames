@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import AchievementToasts from "./components/ui/AchievementToasts";
 import { ACHIEVEMENT_REGISTRY } from "./data/achievementsRegistry";
 import { gameRegistry } from "./data/gameRegistry";
+import { applyTheme } from "./data/themePalettes";
 import FlappyGame from "./games/flappy/FlappyGame";
 import Game2048 from "./games/game_2048/Game2048";
 import Connect4Game from "./games/connect4/Connect4Game";
@@ -23,7 +24,7 @@ import ProfileScreen from "./screens/ProfileScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import { readAchievements, resetAchievements } from "./services/storage/achievementsStorage";
 import { ACHIEVEMENT_UNLOCK_EVENT } from "./services/progression/progressionService";
-import { readProfile, resetProfile } from "./services/storage/profileStorage";
+import { readProfile, resetProfile, writeProfile } from "./services/storage/profileStorage";
 import { readSettings, writeSettings } from "./services/storage/settingsStorage";
 import { readStats, resetStats } from "./services/storage/statsStorage";
 import type { GameId, GameMeta } from "./types/game";
@@ -53,6 +54,28 @@ function App() {
     setAchievements(resetAchievements());
     setProfile(resetProfile());
   }, [settings.reset_on_start]);
+
+  useEffect(() => {
+    applyTheme(settings.theme);
+  }, [settings.theme]);
+
+  useEffect(() => {
+    const active = Boolean(activeGame);
+    document.body.classList.toggle("game-active", active);
+    if (!active) {
+      return;
+    }
+    const preventTouchScroll = (event: TouchEvent) => {
+      if (settings.mobile_control_scheme === "gestures") {
+        event.preventDefault();
+      }
+    };
+    document.addEventListener("touchmove", preventTouchScroll, { passive: false });
+    return () => {
+      document.removeEventListener("touchmove", preventTouchScroll);
+      document.body.classList.remove("game-active");
+    };
+  }, [activeGame, settings.mobile_control_scheme]);
 
   useEffect(() => {
     const onUnlocked = (event: Event) => {
@@ -101,6 +124,9 @@ function App() {
       {!activeGame && view === "menu" && (
         <MainMenu
           games={gameRegistry}
+          profile={profile}
+          stats={stats}
+          achievements={achievements}
           onOpenSettings={() => setView("settings")}
           onOpenProfile={() => setView("profile")}
           onOpenAchievements={() => setView("achievements")}
@@ -136,7 +162,15 @@ function App() {
       )}
 
       {!activeGame && view === "profile" && (
-        <ProfileScreen profile={profile} stats={stats} onBack={() => setView("menu")} />
+        <ProfileScreen
+          profile={profile}
+          stats={stats}
+          onChangeProfile={(next) => {
+            setProfile(next);
+            writeProfile(next);
+          }}
+          onBack={() => setView("menu")}
+        />
       )}
 
       {!activeGame && view === "achievements" && (

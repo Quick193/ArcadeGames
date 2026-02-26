@@ -158,6 +158,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
           if (controlScheme !== "gestures") {
             return;
           }
+          event.preventDefault();
           const touch = event.touches[0];
           touchStartRef.current = { x: touch.clientX, y: touch.clientY };
         }}
@@ -165,6 +166,7 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
           if (controlScheme !== "gestures" || !touchStartRef.current) {
             return;
           }
+          event.preventDefault();
           const touch = event.changedTouches[0];
           const dx = touch.clientX - touchStartRef.current.x;
           const dy = touch.clientY - touchStartRef.current.y;

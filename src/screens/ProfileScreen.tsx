@@ -5,10 +5,11 @@ import { GAME_DISPLAY_NAMES, KNOWN_GAMES } from "../data/gameDisplayNames";
 interface ProfileScreenProps {
   profile: ProfileData;
   stats: StatsData;
+  onChangeProfile: (next: ProfileData) => void;
   onBack: () => void;
 }
 
-function ProfileScreen({ profile, stats, onBack }: ProfileScreenProps) {
+function ProfileScreen({ profile, stats, onChangeProfile, onBack }: ProfileScreenProps) {
   const games = KNOWN_GAMES.map((id) => {
     const g = stats.games[id];
     const played = g?.games_played ?? 0;
@@ -30,6 +31,33 @@ function ProfileScreen({ profile, stats, onBack }: ProfileScreenProps) {
         <h1>Profile</h1>
         <p>{profile.display_name}</p>
       </header>
+
+      <section className="settings-block">
+        <h3>Identity</h3>
+        <label className="setting-row">
+          <span>Name</span>
+          <input
+            type="text"
+            maxLength={24}
+            value={profile.display_name}
+            onChange={(e) => {
+              const value = e.target.value.slice(0, 24);
+              onChangeProfile({ ...profile, display_name: value || "Player 1" });
+            }}
+          />
+        </label>
+        <label className="setting-row">
+          <span>Avatar Index</span>
+          <input
+            type="range"
+            min={0}
+            max={7}
+            step={1}
+            value={profile.avatar_index}
+            onChange={(e) => onChangeProfile({ ...profile, avatar_index: Number(e.target.value) })}
+          />
+        </label>
+      </section>
 
       <section className="settings-block">
         <h3>Global Stats</h3>

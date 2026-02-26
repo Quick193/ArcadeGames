@@ -142,14 +142,16 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
                       if (state.dead || state.won) return;
                       setState((prev) => (prev ? toggleFlag(prev, r, c) : prev));
                     }}
-                    onTouchStart={() => {
+                    onTouchStart={(event) => {
                       if (controlScheme !== "gestures") return;
+                      event.preventDefault();
                       pressRef.current = window.setTimeout(() => {
                         setState((prev) => (prev ? toggleFlag(prev, r, c) : prev));
                       }, 350);
                     }}
-                    onTouchEnd={() => {
+                    onTouchEnd={(event) => {
                       if (controlScheme !== "gestures") return;
+                      event.preventDefault();
                       if (pressRef.current != null) {
                         window.clearTimeout(pressRef.current);
                         pressRef.current = null;

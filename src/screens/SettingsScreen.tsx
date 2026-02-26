@@ -1,4 +1,5 @@
 import type { AppSettings } from "../types/settings";
+import { THEME_OPTIONS } from "../data/themePalettes";
 
 interface SettingsScreenProps {
   settings: AppSettings;
@@ -9,7 +10,6 @@ interface SettingsScreenProps {
   onBack: () => void;
 }
 
-const THEME_OPTIONS = ["modern_dark", "neon_grid", "sunset_arcade", "retro_green"];
 const FPS_OPTIONS = [30, 60, 120, 0];
 
 function SettingsScreen({

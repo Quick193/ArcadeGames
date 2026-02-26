@@ -9,10 +9,11 @@ interface ChessGameProps {
 }
 
 type Board = (string | null)[][];
+const SAVE_KEY = "arcade.chess.autosave.v1";
 
 function ChessGame({ onExit }: ChessGameProps) {
-  const [board, setBoard] = useState<Board>(() => initialBoard());
-  const [whiteTurn, setWhiteTurn] = useState(true);
+  const [board, setBoard] = useState<Board>(() => readSave().board);
+  const [whiteTurn, setWhiteTurn] = useState(() => readSave().whiteTurn);
   const [selected, setSelected] = useState<[number, number] | null>(null);
   const session = useGameSession("chess");
   const exitToMenu = () => {
@@ -28,6 +29,7 @@ function ChessGame({ onExit }: ChessGameProps) {
         setBoard(initialBoard());
         setWhiteTurn(true);
         setSelected(null);
+        clearSave();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -45,6 +47,10 @@ function ChessGame({ onExit }: ChessGameProps) {
       });
     }
   }, [board, session]);
+
+  useEffect(() => {
+    writeSave(board, whiteTurn);
+  }, [board, whiteTurn]);
 
   return (
     <section className="chess-screen">
@@ -107,6 +113,30 @@ function ChessGame({ onExit }: ChessGameProps) {
       </div>
     </section>
   );
+}
+
+function readSave(): { board: Board; whiteTurn: boolean } {
+  const raw = window.localStorage.getItem(SAVE_KEY);
+  if (!raw) {
+    return { board: initialBoard(), whiteTurn: true };
+  }
+  try {
+    const parsed = JSON.parse(raw) as { board?: Board; whiteTurn?: boolean };
+    if (!parsed.board || !Array.isArray(parsed.board) || parsed.board.length !== 8) {
+      return { board: initialBoard(), whiteTurn: true };
+    }
+    return { board: parsed.board, whiteTurn: Boolean(parsed.whiteTurn) };
+  } catch {
+    return { board: initialBoard(), whiteTurn: true };
+  }
+}
+
+function writeSave(board: Board, whiteTurn: boolean): void {
+  window.localStorage.setItem(SAVE_KEY, JSON.stringify({ board, whiteTurn }));
+}
+
+function clearSave(): void {
+  window.localStorage.removeItem(SAVE_KEY);
 }
 
 function initialBoard(): Board {

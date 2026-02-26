@@ -185,6 +185,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
           if (controlScheme !== "gestures") {
             return;
           }
+          event.preventDefault();
           if (state.phase === "game") {
             updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
             return;
@@ -194,6 +195,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
         }}
         onTouchMove={(event) => {
           if (controlScheme === "gestures" && state.phase === "game") {
+            event.preventDefault();
             updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
           }
         }}
@@ -201,6 +203,7 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
           if (controlScheme !== "gestures") {
             return;
           }
+          event.preventDefault();
           if (state.phase === "game") {
             updateTouchInputFromTouches(event.touches, state, canvasRef.current, touchInputRef);
             return;
