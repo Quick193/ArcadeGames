@@ -4,7 +4,7 @@
 .c4-header p { margin: 6px 0 0; color: #8d99ae; }
 .c4-select { background: #0f1829; border: 1px solid #23324d; border-radius: 12px; padding: 12px; display: grid; gap: 8px; width: min(100%, 360px); }
 .c4-select h2 { margin: 0 0 6px; }
-.c4-select .opt { border: 1px solid #23324d; border-radius: 8px; padding: 10px; }
+.c4-select .opt { border: 1px solid #23324d; border-radius: 8px; padding: 10px; text-align: left; background: #142037; }
 .c4-select .opt.active { border-color: #4cc9f0; background: #172a44; }
 .c4-game { display: grid; gap: 10px; }
 .c4-status { display: flex; gap: 14px; flex-wrap: wrap; color: #cdd3df; }

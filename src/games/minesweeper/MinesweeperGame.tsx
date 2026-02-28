@@ -89,10 +89,10 @@ function MinesweeperGame({ onExit, controlScheme }: MinesweeperGameProps) {
       {phase === "select" && (
         <section className="ms-select">
           {DIFFICULTIES.map((d, i) => (
-            <div key={d.name} className={`opt ${i === sel ? "active" : ""}`}>
+            <button key={d.name} type="button" className={`opt ${i === sel ? "active" : ""}`} onClick={() => start(i)}>
               <strong>{d.name}</strong>
               <span>{d.cols}x{d.rows} | {d.mines} mines</span>
-            </div>
+            </button>
           ))}
         </section>
       )}

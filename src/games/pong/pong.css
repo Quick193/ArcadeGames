@@ -19,8 +19,23 @@
   color: #8d99ae;
 }
 
+.pong-select {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 380px);
+  background: #0f1829;
+  border: 1px solid #23324d;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.pong-select button.active {
+  border-color: #4cc9f0;
+  background: #1a2e4b;
+}
+
 .pong-canvas {
-  width: min(100%, 960px);
+  width: min(100%, 540px);
   height: auto;
   border: 1px solid #2b436a;
   border-radius: 12px;

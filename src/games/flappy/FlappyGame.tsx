@@ -46,6 +46,11 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
     setState((prev) => startGame(prev, ["easy", "medium", "hard"][prev.selection] as Difficulty));
   };
 
+  const chooseDifficulty = (index: number) => {
+    const diff = (["easy", "medium", "hard"] as Difficulty[])[index] ?? "medium";
+    setState((prev) => startGame(prev, diff));
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "q" || event.key === "Escape") {
@@ -148,18 +153,28 @@ function FlappyGame({ onExit, controlScheme }: FlappyGameProps) {
         </button>
       </header>
 
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        className="flappy-canvas"
-      />
+      {state.phase === "select" && (
+        <section className="flappy-select">
+          <button type="button" className={state.selection === 0 ? "active" : ""} onClick={() => chooseDifficulty(0)}>Easy</button>
+          <button type="button" className={state.selection === 1 ? "active" : ""} onClick={() => chooseDifficulty(1)}>Medium</button>
+          <button type="button" className={state.selection === 2 ? "active" : ""} onClick={() => chooseDifficulty(2)}>Hard</button>
+        </section>
+      )}
+
+      {state.phase === "game" && (
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          className="flappy-canvas"
+        />
+      )}
 
       {controlScheme === "buttons" && state.phase === "select" ? (
         <MobileControls
           dpad={{ up: selectUp, down: selectDown }}
           actions={[
-            { label: "Play", onPress: selectPlay },
+            { label: "Play", onPress: () => chooseDifficulty(state.selection) },
             { label: "Menu", onPress: exitToMenu }
           ]}
         />
@@ -203,11 +218,6 @@ function drawFrame(canvas: HTMLCanvasElement | null, state: FlappyState, bestSco
   bg.addColorStop(1, "#041022");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  if (state.phase === "select") {
-    drawSelect(ctx, state.selection);
-    return;
-  }
 
   const params = state.params;
   if (!params) {
@@ -253,38 +263,6 @@ function drawFrame(canvas: HTMLCanvasElement | null, state: FlappyState, bestSco
     ctx.fillText("R restart | Q menu", WIDTH / 2, HEIGHT / 2 + 74);
   }
 
-  ctx.textAlign = "left";
-}
-
-function drawSelect(ctx: CanvasRenderingContext2D, selection: number): void {
-  ctx.fillStyle = "#edf2f4";
-  ctx.textAlign = "center";
-  ctx.font = "bold 56px Trebuchet MS, Segoe UI, sans-serif";
-  ctx.fillText("FLAPPY BIRD", WIDTH / 2, 140);
-
-  const opts = ["Easy", "Medium", "Hard"];
-  opts.forEach((opt, i) => {
-    const x = (WIDTH - 300) / 2;
-    const y = 280 + i * 82;
-    const active = i === selection;
-
-    ctx.fillStyle = active ? "#2a3f1d" : "#182720";
-    roundedRect(ctx, x, y, 300, 58, 11);
-    ctx.fill();
-
-    ctx.strokeStyle = active ? "#ffd166" : "#2e4a3a";
-    ctx.lineWidth = active ? 2 : 1;
-    roundedRect(ctx, x, y, 300, 58, 11);
-    ctx.stroke();
-
-    ctx.fillStyle = "#edf2f4";
-    ctx.font = "22px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.fillText(opt, WIDTH / 2, y + 38);
-  });
-
-  ctx.fillStyle = "#8d99ae";
-  ctx.font = "13px Trebuchet MS, Segoe UI, sans-serif";
-  ctx.fillText("Arrow keys select | Enter play | Q back", WIDTH / 2, HEIGHT - 24);
   ctx.textAlign = "left";
 }
 

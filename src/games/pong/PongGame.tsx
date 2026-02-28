@@ -44,6 +44,19 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
     setState((prev) => ({ ...prev, selection: (prev.selection + 1) % count }));
   };
 
+  const chooseMode = (index: number) => {
+    if (index === 0) {
+      setState((prev) => enterDifficultySelection(prev));
+      return;
+    }
+    setState((prev) => startGame(prev, "2p", null));
+  };
+
+  const chooseDifficulty = (index: number) => {
+    const diff = (["easy", "medium", "hard"] as Difficulty[])[index] ?? "medium";
+    setState((prev) => startGame(prev, "1p", diff));
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       keysRef.current.add(event.key);
@@ -172,40 +185,28 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
         </button>
       </header>
 
-      <canvas
-        ref={canvasRef}
-        width={WIDTH}
-        height={HEIGHT}
-        className="pong-canvas"
-      />
-
-      {controlScheme === "buttons" && state.phase === "mode" && (
-        <MobileControls
-          dpad={{ up: () => moveSelectionUp(2), down: () => moveSelectionDown(2) }}
-          actions={[
-            {
-              label: "Select",
-              onPress: () => {
-                setState((prev) => (prev.selection === 0 ? enterDifficultySelection(prev) : startGame(prev, "2p", null)));
-              }
-            },
-            { label: "Menu", onPress: exitToMenu }
-          ]}
-        />
+      {state.phase === "mode" && (
+        <section className="pong-select">
+          <button type="button" className={state.selection === 0 ? "active" : ""} onClick={() => chooseMode(0)}>1 Player vs AI</button>
+          <button type="button" className={state.selection === 1 ? "active" : ""} onClick={() => chooseMode(1)}>2 Players Local</button>
+        </section>
       )}
 
-      {controlScheme === "buttons" && state.phase === "difficulty" && (
-        <MobileControls
-          dpad={{ up: () => moveSelectionUp(3), down: () => moveSelectionDown(3) }}
-          actions={[
-            {
-              label: "Play",
-              onPress: () => {
-                setState((prev) => startGame(prev, "1p", ["easy", "medium", "hard"][prev.selection] as Difficulty));
-              }
-            },
-            { label: "Back", onPress: () => setState((prev) => enterModeSelection(prev)) }
-          ]}
+      {state.phase === "difficulty" && (
+        <section className="pong-select">
+          <button type="button" className={state.selection === 0 ? "active" : ""} onClick={() => chooseDifficulty(0)}>Easy</button>
+          <button type="button" className={state.selection === 1 ? "active" : ""} onClick={() => chooseDifficulty(1)}>Medium</button>
+          <button type="button" className={state.selection === 2 ? "active" : ""} onClick={() => chooseDifficulty(2)}>Hard</button>
+          <button type="button" onClick={() => setState((prev) => enterModeSelection(prev))}>Back</button>
+        </section>
+      )}
+
+      {state.phase === "game" && (
+        <canvas
+          ref={canvasRef}
+          width={WIDTH}
+          height={HEIGHT}
+          className="pong-canvas"
         />
       )}
 
@@ -240,8 +241,6 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
           ]}
         />
       )}
-
-      
     </section>
   );
 }
@@ -264,48 +263,7 @@ function drawFrame(canvas: HTMLCanvasElement | null, state: PongState): void {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  if (state.phase === "mode") {
-    drawSelection(ctx, "PONG", ["1 Player vs AI", "2 Players Local"], state.selection);
-    return;
-  }
-
-  if (state.phase === "difficulty") {
-    drawSelection(ctx, "Difficulty", ["Easy", "Medium", "Hard"], state.selection);
-    return;
-  }
-
   drawMatch(ctx, state);
-}
-
-function drawSelection(ctx: CanvasRenderingContext2D, title: string, options: string[], selected: number): void {
-  ctx.textAlign = "center";
-  ctx.fillStyle = "#edf2f4";
-  ctx.font = "bold 58px Trebuchet MS, Segoe UI, sans-serif";
-  ctx.fillText(title, WIDTH / 2, 140);
-
-  options.forEach((opt, i) => {
-    const x = (WIDTH - 340) / 2;
-    const y = 250 + i * 86;
-    const active = i === selected;
-
-    ctx.fillStyle = active ? "#1f3f64" : "#13243e";
-    roundedRect(ctx, x, y, 340, 60, 12);
-    ctx.fill();
-
-    ctx.strokeStyle = active ? "#4cc9f0" : "#2b436a";
-    ctx.lineWidth = active ? 2 : 1;
-    roundedRect(ctx, x, y, 340, 60, 12);
-    ctx.stroke();
-
-    ctx.fillStyle = "#edf2f4";
-    ctx.font = "22px Trebuchet MS, Segoe UI, sans-serif";
-    ctx.fillText(opt, WIDTH / 2, y + 39);
-  });
-
-  ctx.font = "13px Trebuchet MS, Segoe UI, sans-serif";
-  ctx.fillStyle = "#8d99ae";
-  ctx.fillText("Arrow keys select | Enter confirm | Q back", WIDTH / 2, HEIGHT - 24);
-  ctx.textAlign = "left";
 }
 
 function drawMatch(ctx: CanvasRenderingContext2D, state: PongState): void {

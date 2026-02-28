@@ -48,6 +48,27 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
     setHover(Math.floor(COLS / 2));
   };
 
+  const pickMode = (index: number) => {
+    setSel(index);
+    if (index === 0) {
+      setMode("1p");
+      setPhase("difficulty");
+      setSel(1);
+      return;
+    }
+    setMode("2p");
+    setPhase("game");
+    resetGame();
+  };
+
+  const pickDifficulty = (index: number) => {
+    setSel(index);
+    const d = (["easy", "medium", "hard"] as Diff[])[index] ?? "medium";
+    setDiff(d);
+    setPhase("game");
+    resetGame();
+  };
+
   const place = (col: number) => {
     if (phase !== "game" || winner || isDraw) return;
     if (mode === "1p" && turn === 2) return;
@@ -198,8 +219,8 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
         <button type="button" onClick={exitToMenu}>Back to Menu</button>
       </header>
 
-      {phase === "mode" && <SelectCard title="CONNECT 4" options={["1 Player vs AI", "2 Players Local"]} sel={sel} />}
-      {phase === "difficulty" && <SelectCard title="Difficulty" options={["Easy", "Medium", "Hard"]} sel={sel} />}
+      {phase === "mode" && <SelectCard title="CONNECT 4" options={["1 Player vs AI", "2 Players Local"]} sel={sel} onSelect={pickMode} />}
+      {phase === "difficulty" && <SelectCard title="Difficulty" options={["Easy", "Medium", "Hard"]} sel={sel} onSelect={pickDifficulty} />}
 
       {phase === "game" && (
         <section className="c4-game">
@@ -247,45 +268,16 @@ function Connect4Game({ onExit, controlScheme }: Connect4GameProps) {
         />
       )}
 
-      {controlScheme === "buttons" && phase !== "game" && (
-        <MobileControls
-          dpad={{ up: () => setSel((s) => (phase === "mode" ? (s + 1) % 2 : (s + 2) % 3)), down: () => setSel((s) => (phase === "mode" ? (s + 1) % 2 : (s + 1) % 3)) }}
-          actions={[
-            {
-              label: "Select",
-              onPress: () => {
-                if (phase === "mode") {
-                  if (sel === 0) {
-                    setMode("1p");
-                    setPhase("difficulty");
-                    setSel(1);
-                  } else {
-                    setMode("2p");
-                    setPhase("game");
-                    resetGame();
-                  }
-                } else if (phase === "difficulty") {
-                  const d = (["easy", "medium", "hard"] as Diff[])[sel] ?? "medium";
-                  setDiff(d);
-                  setPhase("game");
-                  resetGame();
-                }
-              }
-            },
-            { label: "Back", onPress: exitToMenu }
-          ]}
-        />
-      )}
     </section>
   );
 }
 
-function SelectCard({ title, options, sel }: { title: string; options: string[]; sel: number }) {
+function SelectCard({ title, options, sel, onSelect }: { title: string; options: string[]; sel: number; onSelect: (index: number) => void }) {
   return (
     <section className="c4-select">
       <h2>{title}</h2>
       {options.map((opt, i) => (
-        <div key={opt} className={`opt ${i === sel ? "active" : ""}`}>{opt}</div>
+        <button key={opt} type="button" className={`opt ${i === sel ? "active" : ""}`} onClick={() => onSelect(i)}>{opt}</button>
       ))}
     </section>
   );

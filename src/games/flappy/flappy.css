@@ -19,8 +19,23 @@
   color: #8d99ae;
 }
 
+.flappy-select {
+  display: grid;
+  gap: 8px;
+  width: min(100%, 380px);
+  background: #0f1829;
+  border: 1px solid #23324d;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.flappy-select button.active {
+  border-color: #ffd166;
+  background: #2a3f1d;
+}
+
 .flappy-canvas {
-  width: min(100%, 960px);
+  width: min(100%, 540px);
   height: auto;
   border: 1px solid #2b436a;
   border-radius: 12px;
