@@ -16,6 +16,13 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const shipRef = useRef({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
+  const asteroidsRef = useRef(spawnAsteroids(4));
+  const bulletsRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number }>>([]);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const deadRef = useRef(false);
+  const waveRef = useRef(1);
 
   const [ship, setShip] = useState({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
   const [asteroids, setAsteroids] = useState(() => spawnAsteroids(4));
@@ -32,8 +39,15 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
 
   const resetAll = () => {
     session.restartSession();
+    shipRef.current = { x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 };
+    asteroidsRef.current = spawnAsteroids(4);
+    bulletsRef.current = [];
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    deadRef.current = false;
+    waveRef.current = 1;
     setShip({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
-    setAsteroids(spawnAsteroids(4));
+    setAsteroids(asteroidsRef.current);
     setBullets([]);
     setScore(0);
     setLives(3);
@@ -46,11 +60,14 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       keysRef.current.add(e.key);
       if (e.key === "q" || e.key === "Escape") exitToMenu();
       if (e.key === "r") resetAll();
-      if (e.key === " " && !dead) {
+      if (e.key === " " && !deadRef.current) {
         setBullets((prev) => {
           if (prev.length > 8) return prev;
-          const rad = (ship.ang * Math.PI) / 180;
-          return [...prev, { x: ship.x + Math.cos(rad) * 20, y: ship.y + Math.sin(rad) * 20, vx: Math.cos(rad) * 9 + ship.vx, vy: Math.sin(rad) * 9 + ship.vy, life: 60 }];
+          const curr = shipRef.current;
+          const rad = (curr.ang * Math.PI) / 180;
+          const next = [...prev, { x: curr.x + Math.cos(rad) * 20, y: curr.y + Math.sin(rad) * 20, vx: Math.cos(rad) * 9 + curr.vx, vy: Math.sin(rad) * 9 + curr.vy, life: 60 }];
+          bulletsRef.current = next;
+          return next;
         });
       }
     };
@@ -61,7 +78,35 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
     };
-  }, [dead, exitToMenu, ship]);
+  }, [exitToMenu]);
+
+  useEffect(() => {
+    shipRef.current = ship;
+  }, [ship]);
+
+  useEffect(() => {
+    asteroidsRef.current = asteroids;
+  }, [asteroids]);
+
+  useEffect(() => {
+    bulletsRef.current = bullets;
+  }, [bullets]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    livesRef.current = lives;
+  }, [lives]);
+
+  useEffect(() => {
+    deadRef.current = dead;
+  }, [dead]);
+
+  useEffect(() => {
+    waveRef.current = wave;
+  }, [wave]);
 
   useEffect(() => {
     if (!dead) {
@@ -78,7 +123,7 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
 
   useEffect(() => {
     const tick = () => {
-      if (!dead) {
+      if (!deadRef.current) {
         setShip((s) => {
           let { x, y, vx, vy, ang } = s;
           if (keysRef.current.has("ArrowLeft") || keysRef.current.has("a")) ang -= 4;
@@ -92,15 +137,25 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
           vy *= 0.99;
           x = wrap(x + vx, W);
           y = wrap(y + vy, H);
-          return { x, y, vx, vy, ang };
+          const next = { x, y, vx, vy, ang };
+          shipRef.current = next;
+          return next;
         });
 
-        setBullets((prev) => prev.map((b) => ({ ...b, x: wrap(b.x + b.vx, W), y: wrap(b.y + b.vy, H), life: b.life - 1 })).filter((b) => b.life > 0));
-        setAsteroids((prev) => prev.map((a) => ({ ...a, x: wrap(a.x + a.vx, W), y: wrap(a.y + a.vy, H), ang: a.ang + a.rot })));
+        setBullets((prev) => {
+          const next = prev.map((b) => ({ ...b, x: wrap(b.x + b.vx, W), y: wrap(b.y + b.vy, H), life: b.life - 1 })).filter((b) => b.life > 0);
+          bulletsRef.current = next;
+          return next;
+        });
+        setAsteroids((prev) => {
+          const next = prev.map((a) => ({ ...a, x: wrap(a.x + a.vx, W), y: wrap(a.y + a.vy, H), ang: a.ang + a.rot }));
+          asteroidsRef.current = next;
+          return next;
+        });
 
         setAsteroids((prev) => {
           let next = [...prev];
-          let curBullets = [...bullets];
+          let curBullets = [...bulletsRef.current];
           for (let i = next.length - 1; i >= 0; i -= 1) {
             const a = next[i];
             const bi = curBullets.findIndex((b) => dist(a.x, a.y, b.x, b.y) < a.r);
@@ -114,33 +169,53 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
             }
           }
           if (next.length === 0) {
-            setWave((w) => w + 1);
+            setWave((w) => {
+              const nw = w + 1;
+              waveRef.current = nw;
+              return nw;
+            });
             next = spawnAsteroids(5);
           }
+          asteroidsRef.current = next;
+          bulletsRef.current = curBullets;
           setBullets(curBullets);
           return next;
         });
 
         setAsteroids((prev) => {
-          if (prev.some((a) => dist(a.x, a.y, ship.x, ship.y) < a.r + 14)) {
+          const currShip = shipRef.current;
+          if (prev.some((a) => dist(a.x, a.y, currShip.x, currShip.y) < a.r + 14)) {
             setLives((l) => {
               const nl = l - 1;
-              if (nl <= 0) setDead(true);
+              if (nl <= 0) {
+                setDead(true);
+                deadRef.current = true;
+              }
+              livesRef.current = nl;
               return nl;
             });
-            setShip({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
+            const respawn = { x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 };
+            shipRef.current = respawn;
+            setShip(respawn);
           }
           return prev;
         });
       }
 
-      draw(canvasRef.current, { ship, asteroids, bullets, score, lives, dead });
+      draw(canvasRef.current, {
+        ship: shipRef.current,
+        asteroids: asteroidsRef.current,
+        bullets: bulletsRef.current,
+        score: scoreRef.current,
+        lives: livesRef.current,
+        dead: deadRef.current
+      });
       frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
     return () => { if (frameRef.current != null) cancelAnimationFrame(frameRef.current); };
-  }, [asteroids, bullets, dead, lives, score, ship, wave]);
+  }, []);
 
   return (
     <section className="aster-screen">
@@ -155,7 +230,13 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       {controlScheme === "buttons" && (
         <MobileControls
           dpad={{ left: () => setShip((s) => ({ ...s, ang: s.ang - 10 })), right: () => setShip((s) => ({ ...s, ang: s.ang + 10 })), up: () => setShip((s) => ({ ...s, vx: s.vx + Math.cos((s.ang * Math.PI) / 180) * 0.8, vy: s.vy + Math.sin((s.ang * Math.PI) / 180) * 0.8 })) }}
-          actions={[{ label: "Shoot", onPress: () => setBullets((prev) => [...prev, { x: ship.x, y: ship.y, vx: Math.cos((ship.ang*Math.PI)/180) * 9, vy: Math.sin((ship.ang*Math.PI)/180) * 9, life: 60 }]) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
+          actions={[{ label: "Shoot", onPress: () => setBullets((prev) => {
+            if (prev.length > 8) return prev;
+            const curr = shipRef.current;
+            const next = [...prev, { x: curr.x, y: curr.y, vx: Math.cos((curr.ang*Math.PI)/180) * 9, vy: Math.sin((curr.ang*Math.PI)/180) * 9, life: 60 }];
+            bulletsRef.current = next;
+            return next;
+          }) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
     </section>

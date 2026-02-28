@@ -20,6 +20,13 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const padXRef = useRef(W / 2 - PAD_W / 2);
+  const ballRef = useRef({ x: W / 2, y: PAD_Y - 52, vx: 4.6, vy: -4.6 });
+  const bricksRef = useRef<Array<{ x: number; y: number; w: number; h: number; c: string }>>(buildBricks());
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const deadRef = useRef(false);
+  const wonRef = useRef(false);
 
   const [padX, setPadX] = useState(W / 2 - PAD_W / 2);
   const [ball, setBall] = useState({ x: W / 2, y: PAD_Y - 52, vx: 4.6, vy: -4.6 });
@@ -36,9 +43,16 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
 
   const resetAll = () => {
     session.restartSession();
+    padXRef.current = W / 2 - PAD_W / 2;
+    ballRef.current = { x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 };
+    bricksRef.current = buildBricks();
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    deadRef.current = false;
+    wonRef.current = false;
     setPadX(W / 2 - PAD_W / 2);
-    setBall({ x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 });
-    setBricks(buildBricks());
+    setBall(ballRef.current);
+    setBricks(bricksRef.current);
     setScore(0);
     setLives(3);
     setDead(false);
@@ -73,13 +87,43 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
   }, [dead, score, session, won]);
 
   useEffect(() => {
+    padXRef.current = padX;
+  }, [padX]);
+
+  useEffect(() => {
+    ballRef.current = ball;
+  }, [ball]);
+
+  useEffect(() => {
+    bricksRef.current = bricks;
+  }, [bricks]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    livesRef.current = lives;
+  }, [lives]);
+
+  useEffect(() => {
+    deadRef.current = dead;
+  }, [dead]);
+
+  useEffect(() => {
+    wonRef.current = won;
+  }, [won]);
+
+  useEffect(() => {
     const tick = () => {
-      if (!dead && !won) {
+      if (!deadRef.current && !wonRef.current) {
         setPadX((p) => {
           let next = p;
           if (keysRef.current.has("ArrowLeft") || keysRef.current.has("a")) next -= 8;
           if (keysRef.current.has("ArrowRight") || keysRef.current.has("d")) next += 8;
-          return Math.max(24, Math.min(W - PAD_W - 24, next));
+          const clamped = Math.max(24, Math.min(W - PAD_W - 24, next));
+          padXRef.current = clamped;
+          return clamped;
         });
 
         setBall((prevBall) => {
@@ -101,9 +145,10 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
             vy = Math.abs(vy);
           }
 
-          if (y >= PAD_Y - 2 && y <= PAD_Y + PAD_H + 4 && x >= padX && x <= padX + PAD_W && vy > 0) {
+          const px = padXRef.current;
+          if (y >= PAD_Y - 2 && y <= PAD_Y + PAD_H + 4 && x >= px && x <= px + PAD_W && vy > 0) {
             vy = -Math.abs(vy);
-            const hit = (x - padX) / PAD_W;
+            const hit = (x - px) / PAD_W;
             vx = (hit - 0.5) * 10.2;
           }
 
@@ -120,24 +165,42 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
             }
             if (next.length === 0) {
               setWon(true);
+              wonRef.current = true;
             }
+            bricksRef.current = next;
             return next;
           });
 
           if (y > H + 12) {
             setLives((l) => {
               const nl = l - 1;
-              if (nl <= 0) setDead(true);
+              if (nl <= 0) {
+                setDead(true);
+                deadRef.current = true;
+              }
+              livesRef.current = nl;
               return nl;
             });
-            return { x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 };
+            const respawn = { x: W / 2, y: PAD_Y - 52, vx: 4.6 * (Math.random() < 0.5 ? -1 : 1), vy: -4.6 };
+            ballRef.current = respawn;
+            return respawn;
           }
 
-          return { x, y, vx, vy };
+          const nextBall = { x, y, vx, vy };
+          ballRef.current = nextBall;
+          return nextBall;
         });
       }
 
-      draw(canvasRef.current, { padX, ball, bricks, score, lives, dead, won });
+      draw(canvasRef.current, {
+        padX: padXRef.current,
+        ball: ballRef.current,
+        bricks: bricksRef.current,
+        score: scoreRef.current,
+        lives: livesRef.current,
+        dead: deadRef.current,
+        won: wonRef.current
+      });
       frameRef.current = requestAnimationFrame(tick);
     };
 
@@ -145,7 +208,7 @@ function BreakoutGame({ onExit, controlScheme }: BreakoutGameProps) {
     return () => {
       if (frameRef.current != null) cancelAnimationFrame(frameRef.current);
     };
-  }, [ball, bricks, dead, lives, padX, score, won]);
+  }, []);
 
   return (
     <section className="breakout-screen">

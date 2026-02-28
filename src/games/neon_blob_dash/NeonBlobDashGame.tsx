@@ -17,6 +17,12 @@ function NeonBlobDashGame({ onExit, controlScheme }: NeonBlobDashGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const yRef = useRef(GY - 50);
+  const vyRef = useRef(0);
+  const duckRef = useRef(false);
+  const obsRef = useRef<Array<{ x: number; y: number; w: number; h: number }>>([]);
+  const scoreRef = useRef(0);
+  const deadRef = useRef(false);
 
   const [y, setY] = useState(GY - 50);
   const [vy, setVy] = useState(0);
@@ -30,19 +36,60 @@ function NeonBlobDashGame({ onExit, controlScheme }: NeonBlobDashGameProps) {
     onExit();
   };
 
-  const reset = () => { session.restartSession(); setY(GY - 50); setVy(0); setDuck(false); setObs([]); setScore(0); setDead(false); };
+  const reset = () => {
+    session.restartSession();
+    yRef.current = GY - 50;
+    vyRef.current = 0;
+    duckRef.current = false;
+    obsRef.current = [];
+    scoreRef.current = 0;
+    deadRef.current = false;
+    setY(GY - 50);
+    setVy(0);
+    setDuck(false);
+    setObs([]);
+    setScore(0);
+    setDead(false);
+  };
 
   useEffect(() => {
     const kd = (e: KeyboardEvent) => {
       keysRef.current.add(e.key);
       if (e.key === "q" || e.key === "Escape") exitToMenu();
       if (e.key === "r") reset();
-      if ((e.key === " " || e.key === "ArrowUp") && y >= GY - (duck ? 30 : 50) - 1 && !dead) setVy(-15.8);
+      if ((e.key === " " || e.key === "ArrowUp") && yRef.current >= GY - (duckRef.current ? 30 : 50) - 1 && !deadRef.current) {
+        vyRef.current = -15.8;
+        setVy(-15.8);
+      }
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key);
     window.addEventListener("keydown", kd); window.addEventListener("keyup", ku);
     return () => { window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); };
-  }, [dead, duck, exitToMenu, y]);
+  }, [exitToMenu]);
+
+  useEffect(() => {
+    yRef.current = y;
+  }, [y]);
+
+  useEffect(() => {
+    vyRef.current = vy;
+  }, [vy]);
+
+  useEffect(() => {
+    duckRef.current = duck;
+  }, [duck]);
+
+  useEffect(() => {
+    obsRef.current = obs;
+  }, [obs]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    deadRef.current = dead;
+  }, [dead]);
 
   useEffect(() => {
     if (!dead) {
@@ -56,40 +103,55 @@ function NeonBlobDashGame({ onExit, controlScheme }: NeonBlobDashGameProps) {
 
   useEffect(() => {
     const tick = () => {
-      if (!dead) {
+      if (!deadRef.current) {
         const d = keysRef.current.has("ArrowDown") || keysRef.current.has("s");
-        setDuck(d && y >= GY - 50 - 1);
-        setVy((v) => Math.min(18, v + 0.92));
+        const nextDuck = d && yRef.current >= GY - 50 - 1;
+        setDuck(nextDuck);
+        duckRef.current = nextDuck;
+        setVy((v) => {
+          const nv = Math.min(18, v + 0.92);
+          vyRef.current = nv;
+          return nv;
+        });
         setY((py) => {
-          const nh = duck ? 30 : 50;
-          const ny = py + vy;
-          if (ny + nh >= GY) return GY - nh;
-          return ny;
+          const nh = duckRef.current ? 30 : 50;
+          const ny = py + vyRef.current;
+          const clamped = ny + nh >= GY ? GY - nh : ny;
+          yRef.current = clamped;
+          return clamped;
         });
 
         setObs((prev) => {
           const moved = prev.map((o) => ({ ...o, x: o.x - 8 }));
           const kept = moved.filter((o) => o.x + o.w > -40);
           if (Math.random() < 0.02) kept.push({ x: W + 20, y: GY - (Math.random()<0.7?52:70), w: 34, h: Math.random()<0.7?52:26 });
-          const dino = { x: 92, y, w: duck ? 60 : 44, h: duck ? 30 : 50 };
-          if (kept.some((o) => overlap(dino, o))) setDead(true);
+          const dino = { x: 92, y: yRef.current, w: duckRef.current ? 60 : 44, h: duckRef.current ? 30 : 50 };
+          if (kept.some((o) => overlap(dino, o))) {
+            setDead(true);
+            deadRef.current = true;
+          }
+          obsRef.current = kept;
           return kept;
         });
 
-        setScore((s) => s + 1);
+        setScore((s) => {
+          const ns = s + 1;
+          scoreRef.current = ns;
+          return ns;
+        });
       }
-      drawRunner(canvasRef.current, { y, duck, obs, score, dead, title: "NEON BLOB DASH" });
+      drawRunner(canvasRef.current, { y: yRef.current, duck: duckRef.current, obs: obsRef.current, score: scoreRef.current, dead: deadRef.current, title: "NEON BLOB DASH" });
       frameRef.current = requestAnimationFrame(tick);
     };
     frameRef.current = requestAnimationFrame(tick);
     return () => { if (frameRef.current != null) cancelAnimationFrame(frameRef.current); };
-  }, [dead, duck, obs, score, vy, y]);
+  }, []);
 
   return (
     <section className="runner-screen">
       <header className="runner-header"><div><h1>Neon Blob Dash</h1><p>Jump and survive.</p></div><button type="button" onClick={exitToMenu}>Back to Menu</button></header>
       <canvas ref={canvasRef} className="runner-canvas" width={W} height={H} />
-      {controlScheme === "buttons" && <MobileControls actions={[{ label: "Jump", onPress: () => { if (!dead && y >= GY - (duck?30:50)-1) setVy(-15.8); } }, { label: "Duck", onPress: () => setDuck((d)=>!d) }, { label: "Reset", onPress: reset }, { label: "Menu", onPress: exitToMenu }]} />}
+      {controlScheme === "buttons" && <MobileControls actions={[{ label: "Jump", onPress: () => { if (!deadRef.current && yRef.current >= GY - (duckRef.current ? 30 : 50)-1) { vyRef.current = -15.8; setVy(-15.8); } } }, { label: "Duck", onPress: () => { setDuck((d)=>{ const nd=!d; duckRef.current=nd; return nd; }); } }, { label: "Reset", onPress: reset }, { label: "Menu", onPress: exitToMenu }]} />}
     </section>
   );
 }

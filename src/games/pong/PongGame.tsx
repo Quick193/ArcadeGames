@@ -213,10 +213,10 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
         <MobileControls
           dpad={{
             up: () => {
-              setState((prev) => stepGame(prev, { p1Up: true, p1Down: false, p2Up: false, p2Down: false }));
+              setState((prev) => ({ ...prev, p1y: Math.max(0, prev.p1y - 22) }));
             },
             down: () => {
-              setState((prev) => stepGame(prev, { p1Up: false, p1Down: true, p2Up: false, p2Down: false }));
+              setState((prev) => ({ ...prev, p1y: Math.min(HEIGHT - PAD_H, prev.p1y + 22) }));
             }
           }}
           actions={[
@@ -224,11 +224,13 @@ function PongGame({ onExit, controlScheme }: PongGameProps) {
               ? [
                   {
                     label: "P2 Up",
-                    onPress: () => setState((prev) => stepGame(prev, { p1Up: false, p1Down: false, p2Up: true, p2Down: false }))
+                    repeat: true,
+                    onPress: () => setState((prev) => ({ ...prev, p2y: Math.max(0, prev.p2y - 22) }))
                   },
                   {
                     label: "P2 Down",
-                    onPress: () => setState((prev) => stepGame(prev, { p1Up: false, p1Down: false, p2Up: false, p2Down: true }))
+                    repeat: true,
+                    onPress: () => setState((prev) => ({ ...prev, p2y: Math.min(HEIGHT - PAD_H, prev.p2y + 22) }))
                   }
                 ]
               : []),

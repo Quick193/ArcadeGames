@@ -37,6 +37,10 @@ button {
   border-radius: 8px;
   padding: 8px 14px;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:hover {

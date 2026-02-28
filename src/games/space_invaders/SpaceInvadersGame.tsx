@@ -17,6 +17,14 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const shipXRef = useRef(W / 2 - 22);
+  const waveRef = useRef(1);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const deadRef = useRef(false);
+  const invadersRef = useRef<Array<{ x: number; y: number; dir: number }>>(spawnWave(1));
+  const bulletsRef = useRef<Array<{ x: number; y: number }>>([]);
+  const enemyBulletsRef = useRef<Array<{ x: number; y: number }>>([]);
 
   const [shipX, setShipX] = useState(W / 2 - 22);
   const [wave, setWave] = useState(1);
@@ -34,12 +42,20 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
 
   const resetAll = () => {
     session.restartSession();
+    shipXRef.current = W / 2 - 22;
+    waveRef.current = 1;
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    deadRef.current = false;
+    invadersRef.current = spawnWave(1);
+    bulletsRef.current = [];
+    enemyBulletsRef.current = [];
     setShipX(W / 2 - 22);
     setWave(1);
     setScore(0);
     setLives(3);
     setDead(false);
-    setInvaders(spawnWave(1));
+    setInvaders(invadersRef.current);
     setBullets([]);
     setEnemyBullets([]);
   };
@@ -49,8 +65,13 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
       keysRef.current.add(e.key);
       if (e.key === "q" || e.key === "Escape") exitToMenu();
       if (e.key === "r") resetAll();
-      if (e.key === " " && !dead) {
-        setBullets((b) => (b.length < 6 ? [...b, { x: shipX + 20, y: SHIP_Y - 10 }] : b));
+      if (e.key === " " && !deadRef.current) {
+        setBullets((b) => {
+          if (b.length >= 6) return b;
+          const next = [...b, { x: shipXRef.current + 20, y: SHIP_Y - 10 }];
+          bulletsRef.current = next;
+          return next;
+        });
       }
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key);
@@ -60,7 +81,39 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
       window.removeEventListener("keydown", kd);
       window.removeEventListener("keyup", ku);
     };
-  }, [dead, exitToMenu, shipX]);
+  }, [exitToMenu]);
+
+  useEffect(() => {
+    shipXRef.current = shipX;
+  }, [shipX]);
+
+  useEffect(() => {
+    waveRef.current = wave;
+  }, [wave]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    livesRef.current = lives;
+  }, [lives]);
+
+  useEffect(() => {
+    deadRef.current = dead;
+  }, [dead]);
+
+  useEffect(() => {
+    invadersRef.current = invaders;
+  }, [invaders]);
+
+  useEffect(() => {
+    bulletsRef.current = bullets;
+  }, [bullets]);
+
+  useEffect(() => {
+    enemyBulletsRef.current = enemyBullets;
+  }, [enemyBullets]);
 
   useEffect(() => {
     if (!dead) {
@@ -77,19 +130,29 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
 
   useEffect(() => {
     const tick = () => {
-      if (!dead) {
+      if (!deadRef.current) {
         setShipX((x) => {
           let nx = x;
           if (keysRef.current.has("ArrowLeft") || keysRef.current.has("a")) nx -= 7;
           if (keysRef.current.has("ArrowRight") || keysRef.current.has("d")) nx += 7;
-          return Math.max(8, Math.min(W - 52, nx));
+          const clamped = Math.max(8, Math.min(W - 52, nx));
+          shipXRef.current = clamped;
+          return clamped;
         });
 
-        setBullets((prev) => prev.map((b) => ({ ...b, y: b.y - 10 })).filter((b) => b.y > -20));
-        setEnemyBullets((prev) => prev.map((b) => ({ ...b, y: b.y + 6 })).filter((b) => b.y < H + 20));
+        setBullets((prev) => {
+          const next = prev.map((b) => ({ ...b, y: b.y - 10 })).filter((b) => b.y > -20);
+          bulletsRef.current = next;
+          return next;
+        });
+        setEnemyBullets((prev) => {
+          const next = prev.map((b) => ({ ...b, y: b.y + 6 })).filter((b) => b.y < H + 20);
+          enemyBulletsRef.current = next;
+          return next;
+        });
 
         setInvaders((prev) => {
-          const step = 0.5 + wave * 0.08;
+          const step = 0.5 + waveRef.current * 0.08;
           let edge = false;
           const moved = prev.map((i) => {
             const nx = i.x + i.dir * step;
@@ -97,13 +160,16 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
             return { ...i, x: nx };
           });
           if (edge) {
-            return moved.map((i) => ({ ...i, y: i.y + 16, dir: -i.dir }));
+            const dropped = moved.map((i) => ({ ...i, y: i.y + 16, dir: -i.dir }));
+            invadersRef.current = dropped;
+            return dropped;
           }
+          invadersRef.current = moved;
           return moved;
         });
 
         setInvaders((prevInv) => {
-          const bulletsNow = [...bullets];
+          const bulletsNow = [...bulletsRef.current];
           const survivors = prevInv.filter((inv) => {
             const hitIndex = bulletsNow.findIndex((b) => b.x >= inv.x && b.x <= inv.x + 40 && b.y >= inv.y && b.y <= inv.y + 26);
             if (hitIndex >= 0) {
@@ -113,41 +179,61 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
             }
             return true;
           });
+          bulletsRef.current = bulletsNow;
           setBullets(bulletsNow);
           if (survivors.length === 0) {
-            const nw = wave + 1;
+            const nw = waveRef.current + 1;
+            waveRef.current = nw;
             setWave(nw);
-            return spawnWave(nw);
+            const nextWave = spawnWave(nw);
+            invadersRef.current = nextWave;
+            return nextWave;
           }
+          invadersRef.current = survivors;
           return survivors;
         });
 
-        if (Math.random() < 0.03 && invaders.length > 0) {
-          const shooter = invaders[Math.floor(Math.random() * invaders.length)];
+        if (Math.random() < 0.03 && invadersRef.current.length > 0) {
+          const shooter = invadersRef.current[Math.floor(Math.random() * invadersRef.current.length)];
           if (shooter) setEnemyBullets((b) => [...b, { x: shooter.x + 20, y: shooter.y + 26 }]);
         }
 
         setEnemyBullets((prev) => {
-          const hit = prev.some((b) => b.x >= shipX && b.x <= shipX + 44 && b.y >= SHIP_Y && b.y <= SHIP_Y + 28);
+          const sx = shipXRef.current;
+          const hit = prev.some((b) => b.x >= sx && b.x <= sx + 44 && b.y >= SHIP_Y && b.y <= SHIP_Y + 28);
           if (hit) {
             setLives((l) => {
               const nl = l - 1;
-              if (nl <= 0) setDead(true);
+              if (nl <= 0) {
+                setDead(true);
+                deadRef.current = true;
+              }
               return nl;
             });
+            enemyBulletsRef.current = [];
             return [];
           }
+          enemyBulletsRef.current = prev;
           return prev;
         });
       }
 
-      draw(canvasRef.current, { shipX, invaders, bullets, enemyBullets, score, lives, dead, wave });
+      draw(canvasRef.current, {
+        shipX: shipXRef.current,
+        invaders: invadersRef.current,
+        bullets: bulletsRef.current,
+        enemyBullets: enemyBulletsRef.current,
+        score: scoreRef.current,
+        lives: livesRef.current,
+        dead: deadRef.current,
+        wave: waveRef.current
+      });
       frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
     return () => { if (frameRef.current != null) cancelAnimationFrame(frameRef.current); };
-  }, [bullets, dead, enemyBullets, invaders, lives, score, shipX, wave]);
+  }, []);
 
   return (
     <section className="space-screen">
@@ -162,7 +248,12 @@ function SpaceInvadersGame({ onExit, controlScheme }: SpaceInvadersGameProps) {
       {controlScheme === "buttons" && (
         <MobileControls
           dpad={{ left: () => setShipX((x) => Math.max(8, x - 24)), right: () => setShipX((x) => Math.min(W - 52, x + 24)) }}
-          actions={[{ label: "Shoot", onPress: () => setBullets((b) => [...b, { x: shipX + 20, y: SHIP_Y - 10 }]) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
+          actions={[{ label: "Shoot", onPress: () => setBullets((b) => {
+            if (b.length >= 6) return b;
+            const next = [...b, { x: shipXRef.current + 20, y: SHIP_Y - 10 }];
+            bulletsRef.current = next;
+            return next;
+          }) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
         />
       )}
     </section>

@@ -17,6 +17,13 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const keysRef = useRef<Set<string>>(new Set());
+  const playerRef = useRef({ x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
+  const speedRef = useRef(5.2);
+  const obsRef = useRef<Array<{ x:number; y:number; w:number; h:number; t:"spike"|"enemy" }>>([]);
+  const coinsRef = useRef<Array<{x:number;y:number}>>([]);
+  const scoreRef = useRef(0);
+  const livesRef = useRef(3);
+  const deadRef = useRef(false);
 
   const [player, setPlayer] = useState({ x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
   const [speed, setSpeed] = useState(5.2);
@@ -33,6 +40,13 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
 
   const reset = () => {
     session.restartSession();
+    playerRef.current = { x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 };
+    speedRef.current = 5.2;
+    obsRef.current = [];
+    coinsRef.current = [];
+    scoreRef.current = 0;
+    livesRef.current = 3;
+    deadRef.current = false;
     setPlayer({ x: 120, y: GY - 56, vx: 0, vy: 0, w: 42, h: 56 });
     setSpeed(5.2); setObs([]); setCoins([]); setScore(0); setLives(3); setDead(false);
   };
@@ -42,13 +56,47 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
       keysRef.current.add(e.key);
       if(e.key==="q"||e.key==="Escape") exitToMenu();
       if(e.key==="r") reset();
-      if((e.key===" "||e.key==="ArrowUp"||e.key==="w") && player.y+player.h>=GY-1 && !dead) setPlayer((p)=>({...p,vy:-15.5}));
+      if((e.key===" "||e.key==="ArrowUp"||e.key==="w") && playerRef.current.y+playerRef.current.h>=GY-1 && !deadRef.current) {
+        setPlayer((p)=> {
+          const next = { ...p, vy: -15.5 };
+          playerRef.current = next;
+          return next;
+        });
+      }
       if(e.key==="f"){};
     };
     const ku=(e:KeyboardEvent)=>keysRef.current.delete(e.key);
     window.addEventListener("keydown",kd); window.addEventListener("keyup",ku);
     return ()=>{window.removeEventListener("keydown",kd); window.removeEventListener("keyup",ku);};
-  },[dead,exitToMenu,player.y,player.h]);
+  },[exitToMenu]);
+
+  useEffect(() => {
+    playerRef.current = player;
+  }, [player]);
+
+  useEffect(() => {
+    speedRef.current = speed;
+  }, [speed]);
+
+  useEffect(() => {
+    obsRef.current = obs;
+  }, [obs]);
+
+  useEffect(() => {
+    coinsRef.current = coins;
+  }, [coins]);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
+
+  useEffect(() => {
+    livesRef.current = lives;
+  }, [lives]);
+
+  useEffect(() => {
+    deadRef.current = dead;
+  }, [dead]);
 
   useEffect(() => {
     if (!dead) {
@@ -65,55 +113,67 @@ function EndlessMetroRunGame({ onExit, controlScheme }: EndlessMetroRunGameProps
 
   useEffect(()=>{
     const tick=()=>{
-      if(!dead){
-        setSpeed((s)=>Math.min(9.2,s+0.001));
+      if(!deadRef.current){
+        setSpeed((s)=> {
+          const ns = Math.min(9.2,s+0.001);
+          speedRef.current = ns;
+          return ns;
+        });
         setPlayer((p)=>{
           let nx=p.x; let nvy=Math.min(18,p.vy+0.78); let ny=p.y+nvy;
           if(keysRef.current.has("ArrowLeft")||keysRef.current.has("a")) nx-=4;
           if(keysRef.current.has("ArrowRight")||keysRef.current.has("d")) nx+=4;
           nx=Math.max(36,Math.min(W-76,nx));
           if(ny+p.h>=GY){ny=GY-p.h; nvy=0;}
-          return {...p,x:nx,y:ny,vy:nvy};
+          const next = {...p,x:nx,y:ny,vy:nvy};
+          playerRef.current = next;
+          return next;
         });
 
         setObs((prev)=>{
-          const moved=prev.map((o)=>({...o,x:o.x-speed})).filter((o)=>o.x+o.w>-80);
+          const moved=prev.map((o)=>({...o,x:o.x-speedRef.current})).filter((o)=>o.x+o.w>-80);
           if(Math.random()<0.025) moved.push(Math.random()<0.55?{x:W+30,y:GY-20,w:30,h:20,t:"spike"}:{x:W+30,y:GY-46,w:34,h:34,t:"enemy"});
-          const p=player;
+          const p=playerRef.current;
           if(moved.some((o)=>overlap(p,o))){
-            setLives((l)=>{const nl=l-1; if(nl<=0) setDead(true); return Math.max(0,nl);});
+            setLives((l)=>{const nl=l-1; if(nl<=0) { setDead(true); deadRef.current = true; } livesRef.current = Math.max(0,nl); return Math.max(0,nl);});
             return moved.filter((o)=>!overlap(p,o));
           }
+          obsRef.current = moved;
           return moved;
         });
 
         setCoins((prev)=>{
-          const moved=prev.map((c)=>({...c,x:c.x-speed})).filter((c)=>c.x>-30);
+          const moved=prev.map((c)=>({...c,x:c.x-speedRef.current})).filter((c)=>c.x>-30);
           if(Math.random()<0.02) moved.push({x:W+20,y:GY-[70,90,110][Math.floor(Math.random()*3)]});
-          const p=player;
+          const p=playerRef.current;
           const keep=[] as typeof moved;
           for(const c of moved){
             if(c.x>=p.x&&c.x<=p.x+p.w&&c.y>=p.y&&c.y<=p.y+p.h){ setScore((s)=>s+10); }
             else keep.push(c);
           }
+          coinsRef.current = keep;
           return keep;
         });
 
-        setScore((s)=>s+1);
+        setScore((s)=> {
+          const ns = s + 1;
+          scoreRef.current = ns;
+          return ns;
+        });
       }
 
-      drawMetro(canvasRef.current,{player,obs,coins,score,lives,dead,speed});
+      drawMetro(canvasRef.current,{player: playerRef.current, obs: obsRef.current, coins: coinsRef.current, score: scoreRef.current, lives: livesRef.current, dead: deadRef.current, speed: speedRef.current});
       frameRef.current=requestAnimationFrame(tick);
     };
     frameRef.current=requestAnimationFrame(tick);
     return ()=>{if(frameRef.current!=null)cancelAnimationFrame(frameRef.current);};
-  },[coins,dead,lives,obs,player,score,speed]);
+  },[]);
 
   return (
     <section className="runner-screen">
       <header className="runner-header"><div><h1>Endless Metro Run</h1><p>Run, jump, collect coins, survive.</p></div><button type="button" onClick={exitToMenu}>Back to Menu</button></header>
       <canvas ref={canvasRef} className="runner-canvas" width={W} height={H} />
-      {controlScheme==="buttons" && <MobileControls dpad={{left:()=>setPlayer((p)=>({...p,x:Math.max(36,p.x-22)})),right:()=>setPlayer((p)=>({...p,x:Math.min(W-76,p.x+22)}))}} actions={[{label:"Jump",onPress:()=>setPlayer((p)=>p.y+p.h>=GY-1?{...p,vy:-15.5}:p)},{label:"Reset",onPress:reset},{label:"Menu",onPress:exitToMenu}]} />}
+      {controlScheme==="buttons" && <MobileControls dpad={{left:()=>setPlayer((p)=>{const next={...p,x:Math.max(36,p.x-22)}; playerRef.current=next; return next;}),right:()=>setPlayer((p)=>{const next={...p,x:Math.min(W-76,p.x+22)}; playerRef.current=next; return next;})}} actions={[{label:"Jump",onPress:()=>setPlayer((p)=>{if(p.y+p.h>=GY-1){const next={...p,vy:-15.5}; playerRef.current=next; return next;} return p;})},{label:"Reset",onPress:reset},{label:"Menu",onPress:exitToMenu}]} />}
     </section>
   );
 }
