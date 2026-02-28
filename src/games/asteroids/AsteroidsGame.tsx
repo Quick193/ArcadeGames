@@ -6,11 +6,16 @@ import "./asteroids.css";
 
 const W = 540;
 const H = 900;
+const INVULN_FRAMES = 150;
+const SHOT_COOLDOWN_FRAMES = 11;
 
 interface AsteroidsGameProps {
   onExit: () => void;
   controlScheme: ControlScheme;
 }
+
+type Asteroid = { x: number; y: number; vx: number; vy: number; r: number; size: number; ang: number; rot: number; pts: number };
+type Ship = { x: number; y: number; vx: number; vy: number; ang: number };
 
 function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -23,6 +28,9 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
   const livesRef = useRef(3);
   const deadRef = useRef(false);
   const waveRef = useRef(1);
+  const pausedRef = useRef(false);
+  const invulnRef = useRef(INVULN_FRAMES);
+  const shotCooldownRef = useRef(0);
 
   const [ship, setShip] = useState({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
   const [asteroids, setAsteroids] = useState(() => spawnAsteroids(4));
@@ -31,21 +39,39 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
   const [lives, setLives] = useState(3);
   const [dead, setDead] = useState(false);
   const [wave, setWave] = useState(1);
+  const [paused, setPaused] = useState(false);
+  const [invuln, setInvuln] = useState(INVULN_FRAMES);
   const session = useGameSession("asteroids");
   const exitToMenu = () => {
     session.recordPlaytimeOnly();
     onExit();
   };
 
+  const fireShot = () => {
+    if (deadRef.current || pausedRef.current || shotCooldownRef.current > 0) return;
+    setBullets((prev) => {
+      if (prev.length > 8) return prev;
+      const curr = shipRef.current;
+      const rad = (curr.ang * Math.PI) / 180;
+      const next = [...prev, { x: curr.x + Math.cos(rad) * 20, y: curr.y + Math.sin(rad) * 20, vx: Math.cos(rad) * 9 + curr.vx, vy: Math.sin(rad) * 9 + curr.vy, life: 60 }];
+      bulletsRef.current = next;
+      shotCooldownRef.current = SHOT_COOLDOWN_FRAMES;
+      return next;
+    });
+  };
+
   const resetAll = () => {
     session.restartSession();
     shipRef.current = { x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 };
-    asteroidsRef.current = spawnAsteroids(4);
+    asteroidsRef.current = spawnAsteroids(4, shipRef.current.x, shipRef.current.y);
     bulletsRef.current = [];
     scoreRef.current = 0;
     livesRef.current = 3;
     deadRef.current = false;
     waveRef.current = 1;
+    pausedRef.current = false;
+    invulnRef.current = INVULN_FRAMES;
+    shotCooldownRef.current = 0;
     setShip({ x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 });
     setAsteroids(asteroidsRef.current);
     setBullets([]);
@@ -53,6 +79,8 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
     setLives(3);
     setDead(false);
     setWave(1);
+    setPaused(false);
+    setInvuln(INVULN_FRAMES);
   };
 
   useEffect(() => {
@@ -60,15 +88,16 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       keysRef.current.add(e.key);
       if (e.key === "q" || e.key === "Escape") exitToMenu();
       if (e.key === "r") resetAll();
-      if (e.key === " " && !deadRef.current) {
-        setBullets((prev) => {
-          if (prev.length > 8) return prev;
-          const curr = shipRef.current;
-          const rad = (curr.ang * Math.PI) / 180;
-          const next = [...prev, { x: curr.x + Math.cos(rad) * 20, y: curr.y + Math.sin(rad) * 20, vx: Math.cos(rad) * 9 + curr.vx, vy: Math.sin(rad) * 9 + curr.vy, life: 60 }];
-          bulletsRef.current = next;
+      if (e.key === "p" && !deadRef.current) {
+        setPaused((v) => {
+          const next = !v;
+          pausedRef.current = next;
           return next;
         });
+      }
+      if (e.key === " " && !deadRef.current) {
+        e.preventDefault();
+        fireShot();
       }
     };
     const ku = (e: KeyboardEvent) => keysRef.current.delete(e.key);
@@ -109,6 +138,14 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
   }, [wave]);
 
   useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
+
+  useEffect(() => {
+    invulnRef.current = invuln;
+  }, [invuln]);
+
+  useEffect(() => {
     if (!dead) {
       return;
     }
@@ -123,7 +160,18 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
 
   useEffect(() => {
     const tick = () => {
-      if (!deadRef.current) {
+      if (!deadRef.current && !pausedRef.current) {
+        if (shotCooldownRef.current > 0) {
+          shotCooldownRef.current -= 1;
+        }
+        if (invulnRef.current > 0) {
+          const next = invulnRef.current - 1;
+          invulnRef.current = next;
+          if (next % 2 === 0) {
+            setInvuln(next);
+          }
+        }
+
         setShip((s) => {
           let { x, y, vx, vy, ang } = s;
           if (keysRef.current.has("ArrowLeft") || keysRef.current.has("a")) ang -= 4;
@@ -174,7 +222,8 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
               waveRef.current = nw;
               return nw;
             });
-            next = spawnAsteroids(5);
+            setScore((s) => s + waveRef.current * 200);
+            next = spawnAsteroids(3 + waveRef.current, shipRef.current.x, shipRef.current.y);
           }
           asteroidsRef.current = next;
           bulletsRef.current = curBullets;
@@ -184,7 +233,7 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
 
         setAsteroids((prev) => {
           const currShip = shipRef.current;
-          if (prev.some((a) => dist(a.x, a.y, currShip.x, currShip.y) < a.r + 14)) {
+          if (invulnRef.current <= 0 && prev.some((a) => dist(a.x, a.y, currShip.x, currShip.y) < a.r + 14)) {
             setLives((l) => {
               const nl = l - 1;
               if (nl <= 0) {
@@ -197,6 +246,8 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
             const respawn = { x: W / 2, y: H / 2, vx: 0, vy: 0, ang: -90 };
             shipRef.current = respawn;
             setShip(respawn);
+            invulnRef.current = INVULN_FRAMES;
+            setInvuln(INVULN_FRAMES);
           }
           return prev;
         });
@@ -208,7 +259,10 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
         bullets: bulletsRef.current,
         score: scoreRef.current,
         lives: livesRef.current,
-        dead: deadRef.current
+        dead: deadRef.current,
+        paused: pausedRef.current,
+        wave: waveRef.current,
+        invuln: invulnRef.current
       });
       frameRef.current = requestAnimationFrame(tick);
     };
@@ -222,7 +276,7 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       <header className="aster-header">
         <div>
           <h1>Asteroids</h1>
-          <p>Rotate, thrust, and blast rocks.</p>
+          <p>Rotate, thrust, and blast rocks. P pause, R restart.</p>
         </div>
         <button type="button" onClick={exitToMenu}>Back to Menu</button>
       </header>
@@ -230,34 +284,60 @@ function AsteroidsGame({ onExit, controlScheme }: AsteroidsGameProps) {
       {controlScheme === "buttons" && (
         <MobileControls
           dpad={{ left: () => setShip((s) => ({ ...s, ang: s.ang - 10 })), right: () => setShip((s) => ({ ...s, ang: s.ang + 10 })), up: () => setShip((s) => ({ ...s, vx: s.vx + Math.cos((s.ang * Math.PI) / 180) * 0.8, vy: s.vy + Math.sin((s.ang * Math.PI) / 180) * 0.8 })) }}
-          actions={[{ label: "Shoot", onPress: () => setBullets((prev) => {
-            if (prev.length > 8) return prev;
-            const curr = shipRef.current;
-            const next = [...prev, { x: curr.x, y: curr.y, vx: Math.cos((curr.ang*Math.PI)/180) * 9, vy: Math.sin((curr.ang*Math.PI)/180) * 9, life: 60 }];
-            bulletsRef.current = next;
-            return next;
-          }) }, { label: "Reset", onPress: resetAll }, { label: "Menu", onPress: exitToMenu }]}
+          actions={[
+            { label: "Shoot", onPress: fireShot },
+            {
+              label: paused ? "Resume" : "Pause",
+              onPress: () => setPaused((v) => {
+                const next = !v;
+                pausedRef.current = next;
+                return next;
+              })
+            },
+            { label: "Reset", onPress: resetAll },
+            { label: "Menu", onPress: exitToMenu }
+          ]}
         />
       )}
     </section>
   );
 }
 
-function spawnAsteroids(n: number) {
-  const out: Array<{ x: number; y: number; vx: number; vy: number; r: number; size: number; ang: number; rot: number; pts: number }> = [];
+function spawnAsteroids(n: number, avoidX?: number, avoidY?: number): Asteroid[] {
+  const out: Asteroid[] = [];
   for (let i = 0; i < n; i += 1) {
-    out.push({ x: Math.random() * W, y: Math.random() * H, vx: rand(-2,2), vy: rand(-2,2), r: 40, size: 3, ang: Math.random() * 360, rot: rand(-1,1), pts: 20 });
+    let x = Math.random() * W;
+    let y = Math.random() * H;
+    if (typeof avoidX === "number" && typeof avoidY === "number") {
+      let guard = 0;
+      while (Math.hypot(x - avoidX, y - avoidY) < 160 && guard < 20) {
+        x = Math.random() * W;
+        y = Math.random() * H;
+        guard += 1;
+      }
+    }
+    out.push({ x, y, vx: rand(-2,2), vy: rand(-2,2), r: 40, size: 3, ang: Math.random() * 360, rot: rand(-1,1), pts: 20 });
   }
   return out;
 }
 
-function spawnChild(a: { x: number; y: number }, size: number) {
+function spawnChild(a: { x: number; y: number }, size: number): Asteroid {
   const map: Record<number, { r: number; pts: number }> = { 2: { r: 24, pts: 50 }, 1: { r: 12, pts: 100 } };
   const m = map[size] ?? { r: 12, pts: 100 };
   return { x: a.x, y: a.y, vx: rand(-3,3), vy: rand(-3,3), r: m.r, size, ang: Math.random()*360, rot: rand(-1.5,1.5), pts: m.pts };
 }
 
-function draw(canvas: HTMLCanvasElement | null, s: any): void {
+function draw(canvas: HTMLCanvasElement | null, s: {
+  ship: Ship;
+  asteroids: Asteroid[];
+  bullets: Array<{ x: number; y: number }>;
+  score: number;
+  lives: number;
+  dead: boolean;
+  paused: boolean;
+  wave: number;
+  invuln: number;
+}): void {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -287,13 +367,31 @@ function draw(canvas: HTMLCanvasElement | null, s: any): void {
   const nose=[s.ship.x+Math.cos(rad)*16,s.ship.y+Math.sin(rad)*16];
   const l=[s.ship.x+Math.cos(rad+2.5)*12,s.ship.y+Math.sin(rad+2.5)*12];
   const r=[s.ship.x+Math.cos(rad-2.5)*12,s.ship.y+Math.sin(rad-2.5)*12];
-  ctx.strokeStyle="#4cc9f0";
-  ctx.beginPath(); ctx.moveTo(nose[0],nose[1]); ctx.lineTo(l[0],l[1]); ctx.lineTo(r[0],r[1]); ctx.closePath(); ctx.stroke();
+  const shipVisible = s.invuln <= 0 || Math.floor(s.invuln / 8) % 2 === 0;
+  if (shipVisible) {
+    ctx.strokeStyle = s.invuln > 0 ? "#70e000" : "#4cc9f0";
+    ctx.beginPath();
+    ctx.moveTo(nose[0],nose[1]);
+    ctx.lineTo(l[0],l[1]);
+    ctx.lineTo(r[0],r[1]);
+    ctx.closePath();
+    ctx.stroke();
+  }
 
   ctx.fillStyle="#8d99ae"; ctx.font="bold 18px Trebuchet MS";
-  ctx.fillText(`Score ${s.score}`, 16, 28); ctx.fillText(`Lives ${s.lives}`, 160, 28);
+  ctx.fillText(`Score ${s.score}`, 16, 28);
+  ctx.fillText(`Lives ${s.lives}`, 160, 28);
+  ctx.fillText(`Wave ${s.wave}`, 280, 28);
 
-  if (s.dead){ ctx.fillStyle="rgba(0,0,0,0.6)"; ctx.fillRect(0,0,W,H); ctx.fillStyle="#ff4d6d"; ctx.font="bold 52px Trebuchet MS"; ctx.textAlign="center"; ctx.fillText("GAME OVER",W/2,H/2); ctx.textAlign="left"; }
+  if (s.dead || s.paused){
+    ctx.fillStyle="rgba(0,0,0,0.6)";
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = s.paused ? "#edf2f4" : "#ff4d6d";
+    ctx.font="bold 52px Trebuchet MS";
+    ctx.textAlign="center";
+    ctx.fillText(s.paused ? "PAUSED" : "GAME OVER",W/2,H/2);
+    ctx.textAlign="left";
+  }
 }
 
 function wrap(v:number,max:number){ if(v<0)return v+max; if(v>max)return v-max; return v; }

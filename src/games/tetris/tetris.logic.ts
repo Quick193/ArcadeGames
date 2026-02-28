@@ -61,6 +61,7 @@ export interface TetrisState {
   lines: number;
   level: number;
   fallMs: number;
+  tetrisClears: number;
   gameOver: boolean;
   flashRows: number[];
   flashMs: number;
@@ -77,6 +78,7 @@ export function createInitialState(): TetrisState {
     lines: 0,
     level: 1,
     fallMs: BASE_FALL_MS,
+    tetrisClears: 0,
     gameOver: false,
     flashRows: [],
     flashMs: 0
@@ -215,6 +217,7 @@ function placePiece(state: TetrisState): TetrisState {
       lines: nextLines,
       level: nextLevel,
       fallMs: nextFall,
+      tetrisClears: state.tetrisClears + (fullRows.length === 4 ? 1 : 0),
       flashRows: fullRows,
       flashMs: FLASH_MS
     };

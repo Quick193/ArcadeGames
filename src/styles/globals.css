@@ -73,6 +73,9 @@ canvas {
   touch-action: none;
   max-width: 100%;
   height: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .app-shell {
@@ -84,13 +87,21 @@ canvas {
 body.game-active {
   overflow: hidden;
   overscroll-behavior: none;
+  touch-action: none;
 }
 
 body.game-active .app-shell {
   height: 100dvh;
   overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow-y: hidden;
+  overscroll-behavior: none;
+}
+
+body.game-active,
+body.game-active * {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .hero h1 {
@@ -142,6 +153,124 @@ body.game-active .app-shell {
   gap: 14px;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   margin-top: 22px;
+}
+
+.menu-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 250px;
+  gap: 12px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.menu-games {
+  min-width: 0;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.menu-game-card {
+  background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+  min-height: 152px;
+}
+
+.menu-game-card.selected {
+  box-shadow: 0 0 0 1px rgba(76, 201, 240, 0.45), 0 10px 26px rgba(0, 0, 0, 0.22);
+}
+
+.menu-game-top {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.menu-game-icon {
+  width: 36px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #0a1525;
+}
+
+.menu-game-top h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.menu-game-top p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.menu-game-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: #c4d2e8;
+  font-size: 0.76rem;
+}
+
+.menu-sidebar {
+  display: grid;
+  gap: 10px;
+}
+
+.menu-sidebar h2 {
+  margin: 0;
+}
+
+.menu-stat-list {
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+}
+
+.menu-stat-list div {
+  display: grid;
+  gap: 3px;
+}
+
+.menu-stat-list small {
+  color: var(--muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+}
+
+.menu-stat-list strong {
+  font-size: 0.95rem;
+}
+
+.menu-ach-summary {
+  display: grid;
+  gap: 6px;
+}
+
+.menu-ach-summary h4,
+.menu-ach-summary p {
+  margin: 0;
+}
+
+.menu-ach-summary p {
+  color: #b8c6de;
+  font-size: 0.86rem;
 }
 
 .game-card {
@@ -253,6 +382,7 @@ body.game-active .app-shell {
 .ach-screen {
   display: grid;
   gap: 12px;
+  align-content: start;
 }
 
 .settings-block {
@@ -271,6 +401,13 @@ body.game-active .app-shell {
   color: var(--muted);
 }
 
+.settings-status {
+  margin: 4px 0 0;
+  color: #7ae582;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
 .setting-row {
   display: flex;
   justify-content: space-between;
@@ -284,6 +421,56 @@ body.game-active .app-shell {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 8px;
+}
+
+.setting-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.setting-inline small {
+  color: #b6c3d8;
+  font-size: 0.78rem;
+  min-width: 38px;
+  text-align: right;
+}
+
+button.danger {
+  border-color: #8f3a3a;
+  background: #3a1414;
+}
+
+button.danger:hover {
+  border-color: #be5959;
+}
+
+.settings-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 8, 18, 0.68);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.settings-confirm-card {
+  width: min(460px, 100%);
+  border: 1px solid #334a70;
+  background: #0f1829;
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.settings-confirm-card h3 {
+  margin: 0;
+}
+
+.settings-confirm-card p {
+  margin: 0;
 }
 
 .table-wrap {
@@ -302,27 +489,199 @@ body.game-active .app-shell {
   padding: 8px;
 }
 
-.ach-list {
+.profile-panels {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.profile-left-panel {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 12px;
+}
+
+.profile-top-accent {
+  height: 5px;
+  margin: -12px -12px 2px;
+  border-radius: 6px;
+}
+
+.profile-avatar {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  margin-inline: auto;
+  border: 2px solid #1a2740;
+  color: #071220;
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+.profile-name {
   margin: 0;
-  padding: 0;
-  list-style: none;
+  text-align: center;
+}
+
+.profile-controls {
   display: grid;
   gap: 8px;
 }
 
-.ach-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  border: 1px solid #23324d;
-  border-radius: 8px;
-  padding: 8px 10px;
-  gap: 12px;
+.profile-stats-rows {
+  border-top: 1px solid #23324d;
+  border-bottom: 1px solid #23324d;
+  padding: 10px 0;
+  display: grid;
+  gap: 10px;
 }
 
-.ach-list li p {
-  margin: 4px 0;
+.profile-stats-rows div {
+  display: grid;
+  gap: 4px;
+}
+
+.profile-stats-rows small {
   color: var(--muted);
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.profile-stats-rows strong {
+  color: #dbe8ff;
+  font-size: 1rem;
+}
+
+.profile-ach-summary {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-ach-summary h4,
+.profile-ach-summary p {
+  margin: 0;
+}
+
+.profile-ach-summary p {
+  color: #b8c6de;
+  font-size: 0.88rem;
+}
+
+.profile-right-panel {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-right-panel h3 {
+  margin: 0;
+}
+
+.profile-table-wrap {
+  max-height: min(70dvh, 640px);
+  overflow: auto;
+}
+
+.profile-stats-table th {
+  position: sticky;
+  top: 0;
+  background: #101b2f;
+  z-index: 1;
+}
+
+.profile-stats-table tr.idle td:first-child {
+  color: var(--muted);
+}
+
+.ach-header-stats {
+  display: grid;
+  gap: 8px;
+}
+
+.ach-header-stats .settings-muted {
+  margin: 0;
+}
+
+.ach-grid-wrap {
+  max-height: min(70dvh, 660px);
+  overflow: auto;
+}
+
+.ach-grid {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ach-card {
+  border: 1px solid #2d3e5d;
+  border-radius: 12px;
+  padding: 10px;
+  background: #0f1829;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.ach-icon-pill {
+  width: 36px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #f3f8ff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.ach-card-content {
+  display: grid;
+  gap: 6px;
+}
+
+.ach-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.ach-card-head strong {
+  font-size: 0.95rem;
+}
+
+.ach-card-head span {
+  font-size: 0.75rem;
+  color: #c3d0e6;
+  white-space: nowrap;
+}
+
+.ach-card-content p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.3;
+}
+
+.ach-card-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ach-card-foot small {
+  color: #94a5c2;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
 }
 
 @media (max-width: 900px), (pointer: coarse) {
@@ -401,20 +760,32 @@ body.game-active .app-shell {
     gap: 8px;
     font-size: 0.86rem;
   }
-}
 
-.ach-list li small {
-  color: #7f8ca7;
-  text-transform: uppercase;
-  font-size: 0.7rem;
-}
+  .profile-panels {
+    grid-template-columns: 1fr;
+  }
 
-.ach-meta {
-  text-align: right;
-  display: grid;
-  gap: 6px;
-  color: #cbd5e1;
-  font-size: 0.82rem;
+  .profile-table-wrap,
+  .ach-grid-wrap {
+    max-height: none;
+  }
+
+  .ach-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .menu-game-card {
+    min-height: 142px;
+    padding: 9px;
+  }
 }
 
 .ach-locked {
@@ -455,5 +826,17 @@ body.game-active .app-shell {
   select,
   input[type="text"] {
     width: 100%;
+  }
+
+  .menu-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-game-meta {
+    font-size: 0.73rem;
+  }
+
+  .menu-game-top h3 {
+    font-size: 0.95rem;
   }
 }

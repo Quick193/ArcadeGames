@@ -36,6 +36,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
   const [mistakes, setMistakes] = useState(0);
   const [hintsUsed, setHintsUsed] = useState(0);
   const [pencilMode, setPencilMode] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [wrongCellKey, setWrongCellKey] = useState<string | null>(null);
 
@@ -68,6 +69,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
     setMistakes(0);
     setHintsUsed(0);
     setPencilMode(false);
+    setPaused(false);
     setSeconds(0);
     setSel([4, 4]);
     setWrongCellKey(null);
@@ -88,6 +90,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
       setMistakes(0);
       setHintsUsed(0);
       setPencilMode(false);
+      setPaused(false);
       setSeconds(0);
       setSel([4, 4]);
       setWrongCellKey(null);
@@ -97,12 +100,12 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
   }, [phase, selDiff]);
 
   useEffect(() => {
-    if (phase !== "game" || done) {
+    if (phase !== "game" || done || paused) {
       return;
     }
     const id = window.setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => window.clearInterval(id);
-  }, [done, phase]);
+  }, [done, paused, phase]);
 
   useEffect(() => {
     if (phase !== "game" || !done) {
@@ -151,9 +154,14 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
         return;
       }
       if (e.key === "p") {
+        setPaused((v) => !v);
+        return;
+      }
+      if (e.key === "m" || e.key === "`") {
         setPencilMode((v) => !v);
         return;
       }
+      if (paused) return;
       if (e.key === "ArrowUp") setSel(([r, c]) => [Math.max(0, r - 1), c]);
       if (e.key === "ArrowDown") setSel(([r, c]) => [Math.min(8, r + 1), c]);
       if (e.key === "ArrowLeft") setSel(([r, c]) => [r, Math.max(0, c - 1)]);
@@ -166,10 +174,10 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [done, exitToMenu, phase, selDiff]);
+  }, [done, exitToMenu, paused, phase, selDiff]);
 
   const revealHint = () => {
-    if (done || phase !== "game") {
+    if (done || phase !== "game" || paused || hintsUsed >= 3) {
       return;
     }
     const empty: Array<[number, number]> = [];
@@ -194,7 +202,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
   };
 
   const place = (n: number) => {
-    if (phase !== "game" || done) {
+    if (phase !== "game" || done || paused) {
       return;
     }
     const [r, c] = sel;
@@ -242,7 +250,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
       <header className="sudoku-header">
         <div>
           <h1>Sudoku</h1>
-          <p>N new puzzle, H hint, P pencil mode, R reset, Q menu.</p>
+          <p>N new puzzle, H hint, P pause, M pencil mode, R reset, Q menu.</p>
         </div>
         <button type="button" onClick={exitToMenu}>Back to Menu</button>
       </header>
@@ -270,8 +278,9 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
             <span>Difficulty: {difficulty}</span>
             <span>Time: {formatTime(seconds)}</span>
             <span>Mistakes: {mistakes}/{MAX_MISTAKES}</span>
-            <span>Hints: {hintsUsed}</span>
+            <span>Hints: {hintsUsed}/3</span>
             <span>Mode: {pencilMode ? "Pencil" : "Normal"}</span>
+            {paused && <span>Paused</span>}
             {solved && <span>Solved</span>}
             {lost && <span>Failed</span>}
           </div>
@@ -298,7 +307,10 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
                       sameNum ? "same" : "",
                       wrong ? "wrong" : ""
                     ].join(" ")}
-                    onClick={() => setSel([r, c])}
+                    onClick={() => {
+                      if (paused) return;
+                      setSel([r, c]);
+                    }}
                   >
                     {v > 0 ? (
                       <span>{v}</span>
@@ -319,8 +331,30 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
             ))}
             <button type="button" onClick={() => place(0)}>Clear</button>
             <button type="button" onClick={() => setPencilMode((v) => !v)}>{pencilMode ? "Normal" : "Pencil"}</button>
-            <button type="button" onClick={revealHint}>Hint</button>
+            <button type="button" onClick={revealHint} disabled={paused || hintsUsed >= 3}>Hint</button>
+            <button type="button" onClick={() => setPaused((v) => !v)}>{paused ? "Resume" : "Pause"}</button>
           </div>
+
+          {paused && (
+            <div className="sudoku-overlay">
+              <strong>Paused</strong>
+              <span>Press P to resume</span>
+            </div>
+          )}
+
+          {solved && (
+            <div className="sudoku-overlay solved">
+              <strong>Puzzle Solved!</strong>
+              <span>N new game or Q menu</span>
+            </div>
+          )}
+
+          {lost && (
+            <div className="sudoku-overlay failed">
+              <strong>Too Many Mistakes</strong>
+              <span>N new game or Q menu</span>
+            </div>
+          )}
         </>
       )}
 
@@ -335,6 +369,7 @@ function SudokuGame({ onExit, controlScheme }: SudokuGameProps) {
           actions={[
             { label: pencilMode ? "Normal" : "Pencil", onPress: () => setPencilMode((v) => !v) },
             { label: "Hint", onPress: revealHint },
+            { label: paused ? "Resume" : "Pause", onPress: () => setPaused((v) => !v) },
             { label: "Reset", onPress: resetCurrent },
             { label: "New", onPress: () => startDifficulty(selDiff) },
             { label: "Menu", onPress: exitToMenu }

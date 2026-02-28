@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type DragEvent, type MouseEvent, type PointerEvent, type SyntheticEvent } from "react";
 import "./mobile-controls.css";
 
 export interface ControlButton {
@@ -44,13 +44,29 @@ function MobileControls({ dpad, actions = [] }: MobileControlsProps) {
   };
 
   const bind = (onPress: (() => void) | undefined, repeat = false) => ({
-    onPointerDown: () => {
+    onPointerDown: (event: PointerEvent<HTMLButtonElement>) => {
       if (!onPress) return;
+      event.preventDefault();
+      if (event.currentTarget.setPointerCapture) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
       startHold(onPress, repeat);
     },
-    onPointerUp: stopHold,
+    onPointerUp: (event: PointerEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      if (event.currentTarget.releasePointerCapture && event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      }
+      stopHold();
+    },
+    onPointerMove: (event: PointerEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+    },
     onPointerLeave: stopHold,
-    onPointerCancel: stopHold
+    onPointerCancel: stopHold,
+    onDragStart: (event: DragEvent<HTMLButtonElement>) => event.preventDefault(),
+    onSelectStart: (event: SyntheticEvent<HTMLButtonElement>) => event.preventDefault(),
+    onContextMenu: (event: MouseEvent<HTMLButtonElement>) => event.preventDefault()
   });
 
   useEffect(() => stopHold, []);

@@ -135,10 +135,11 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
       score: state.score,
       won: false,
       extra: {
-        lines: state.lines
+        lines: state.lines,
+        tetris_clears: state.tetrisClears
       }
     });
-  }, [session, state.gameOver, state.lines, state.score]);
+  }, [session, state.gameOver, state.lines, state.score, state.tetrisClears]);
 
   useEffect(() => {
     const run = (time: number) => {
@@ -231,7 +232,6 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
           }}
           actions={[
             { label: "Rotate", onPress: () => performAction("cw") },
-            { label: "Rotate CCW", onPress: () => performAction("ccw") },
             { label: "Hard Drop", onPress: () => performAction("drop") },
             { label: "Hold", onPress: () => performAction("hold") },
             { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
@@ -252,7 +252,6 @@ function TetrisGame({ onExit, controlScheme }: TetrisGameProps) {
         <MobileControls
           actions={[
             { label: "Hold", onPress: () => performAction("hold") },
-            { label: "Rotate CCW", onPress: () => performAction("ccw") },
             { label: isPaused ? "Resume" : "Pause", onPress: () => setIsPaused((prev) => !prev) },
             {
               label: "Restart",

@@ -29,31 +29,48 @@ function AchievementsScreen({ achievements, onBack }: AchievementsScreenProps) {
     <section className="ach-screen">
       <header className="hero">
         <h1>Achievements</h1>
-        <p>{unlockedCount} / {all.length} unlocked • {totalPoints} pts • {progress}%</p>
+        <p>{unlockedCount} / {all.length} unlocked • {totalPoints} pts earned</p>
       </header>
 
-      <section className="settings-block">
+      <section className="settings-block ach-header-stats">
+        <p className="settings-muted">{progress}% complete</p>
         <div className="ach-progress">
           <div className="ach-progress-fill" style={{ width: `${progress}%` }} />
         </div>
-        <ul className="ach-list">
+      </section>
+
+      <section className="settings-block ach-grid-wrap">
+        <ul className="ach-grid">
           {all.map((a) => (
-            <li key={a.id} className={a.unlocked ? "ach-unlocked" : "ach-locked"} style={{ borderColor: a.unlocked ? a.color : "#23324d" }}>
-              <div>
-                <strong>{a.name}</strong>
-                <p>{a.unlocked || !a.secret ? a.description : "Secret achievement - keep playing to unlock"}</p>
-                <small>{a.game_id ? a.game_id.replace(/_/g, " ") : "global"}</small>
+            <li
+              key={a.id}
+              className={`ach-card ${a.unlocked ? "ach-unlocked" : "ach-locked"}`}
+              style={{
+                borderColor: a.unlocked ? a.color : "#2d3e5d"
+              }}
+            >
+              <div className="ach-icon-pill" style={{ background: a.unlocked ? a.color : "#4a5770" }}>
+                {a.icon.slice(0, 3)}
               </div>
-              <div className="ach-meta">
-                <span>{a.points} pts</span>
-                <span>{a.unlocked && a.date ? a.date.slice(0, 10) : "locked"}</span>
+              <div className="ach-card-content">
+                <div className="ach-card-head">
+                  <strong>{a.name}</strong>
+                  <span>{a.points} pts</span>
+                </div>
+                <p>{a.unlocked || !a.secret ? a.description : "Secret achievement - keep playing to unlock"}</p>
+                <div className="ach-card-foot">
+                  <small>{a.game_id ? a.game_id.replace(/_/g, " ").toUpperCase() : "GLOBAL"}</small>
+                  <small>{a.unlocked && a.date ? `OK ${a.date.slice(0, 10)}` : "LOCKED"}</small>
+                </div>
               </div>
             </li>
           ))}
         </ul>
       </section>
 
-      <button type="button" onClick={onBack}>Back to Menu</button>
+      <div className="settings-actions">
+        <button type="button" onClick={onBack}>Back to Menu</button>
+      </div>
     </section>
   );
 }

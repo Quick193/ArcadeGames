@@ -13,6 +13,11 @@
     z-index: 1;
     padding-top: 4px;
     padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    touch-action: none;
+    overscroll-behavior: contain;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
   }
 
   .mobile-dpad {
@@ -25,12 +30,12 @@
   }
 
   .ctrl {
-    min-height: 38px;
+    min-height: 34px;
     border-radius: 9px;
     border: 1px solid #35517d;
     background: #11233d;
     color: #edf2f4;
-    font-size: 0.88rem;
+    font-size: 0.82rem;
     touch-action: manipulation;
     width: 100%;
     white-space: nowrap;
@@ -62,8 +67,8 @@
   }
 
   .ctrl.action {
-    padding: 0 5px;
-    font-size: 0.76rem;
+    padding: 0 4px;
+    font-size: 0.72rem;
     font-weight: 600;
   }
 }

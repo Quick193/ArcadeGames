@@ -25,7 +25,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import { readAchievements, resetAchievements } from "./services/storage/achievementsStorage";
 import { ACHIEVEMENT_UNLOCK_EVENT } from "./services/progression/progressionService";
 import { readProfile, resetProfile, writeProfile } from "./services/storage/profileStorage";
-import { readSettings, writeSettings } from "./services/storage/settingsStorage";
+import { readSettings, resetSettings, writeSettings } from "./services/storage/settingsStorage";
 import { readStats, resetStats } from "./services/storage/statsStorage";
 import type { GameId, GameMeta } from "./types/game";
 
@@ -143,6 +143,7 @@ function App() {
             setStats(resetStats());
             setAchievements(resetAchievements());
             setProfile(resetProfile());
+            setSettings(resetSettings());
           }}
           onBack={() => {
             refreshData();

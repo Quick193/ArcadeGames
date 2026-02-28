@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import type { AppSettings } from "../types/settings";
 import { THEME_OPTIONS } from "../data/themePalettes";
 
@@ -11,6 +12,7 @@ interface SettingsScreenProps {
 }
 
 const FPS_OPTIONS = [30, 60, 120, 0];
+type PendingAction = "stats" | "achievements" | "all" | null;
 
 function SettingsScreen({
   settings,
@@ -20,8 +22,61 @@ function SettingsScreen({
   onResetAll,
   onBack
 }: SettingsScreenProps) {
+  const [pendingAction, setPendingAction] = useState<PendingAction>(null);
+  const [statusMessage, setStatusMessage] = useState<string>("");
   const set = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     onChange({ ...settings, [key]: value });
+  };
+  const actionMessage = useMemo(() => {
+    if (pendingAction === "stats") return "Reset all saved stats?";
+    if (pendingAction === "achievements") return "Reset all unlocked achievements?";
+    if (pendingAction === "all") return "Run full wipe (stats, achievements, profile, settings)?";
+    return "";
+  }, [pendingAction]);
+
+  useEffect(() => {
+    if (!statusMessage) return;
+    const id = window.setTimeout(() => setStatusMessage(""), 2500);
+    return () => window.clearTimeout(id);
+  }, [statusMessage]);
+
+  useEffect(() => {
+    if (!pendingAction) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setPendingAction(null);
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        if (pendingAction === "stats") {
+          onResetStats();
+          setStatusMessage("Stats reset.");
+        } else if (pendingAction === "achievements") {
+          onResetAchievements();
+          setStatusMessage("Achievements reset.");
+        } else {
+          onResetAll();
+          setStatusMessage("Full reset complete.");
+        }
+        setPendingAction(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onResetAchievements, onResetAll, onResetStats, pendingAction]);
+
+  const runPendingAction = () => {
+    if (pendingAction === "stats") {
+      onResetStats();
+      setStatusMessage("Stats reset.");
+    } else if (pendingAction === "achievements") {
+      onResetAchievements();
+      setStatusMessage("Achievements reset.");
+    } else if (pendingAction === "all") {
+      onResetAll();
+      setStatusMessage("Full reset complete.");
+    }
+    setPendingAction(null);
   };
 
   return (
@@ -29,6 +84,7 @@ function SettingsScreen({
       <header className="hero">
         <h1>Settings</h1>
         <p>Changes save immediately.</p>
+        {statusMessage && <p className="settings-status">{statusMessage}</p>}
       </header>
 
       <section className="settings-block">
@@ -39,14 +95,17 @@ function SettingsScreen({
         </label>
         <label className="setting-row">
           <span>Music Volume</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={Math.round(settings.music_volume * 100)}
-            onChange={(e) => set("music_volume", Number(e.target.value) / 100)}
-          />
+          <div className="setting-inline">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(settings.music_volume * 100)}
+              onChange={(e) => set("music_volume", Number(e.target.value) / 100)}
+            />
+            <small>{Math.round(settings.music_volume * 100)}%</small>
+          </div>
         </label>
         <label className="setting-row">
           <span>SFX Enabled</span>
@@ -54,14 +113,17 @@ function SettingsScreen({
         </label>
         <label className="setting-row">
           <span>SFX Volume</span>
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            value={Math.round(settings.sfx_volume * 100)}
-            onChange={(e) => set("sfx_volume", Number(e.target.value) / 100)}
-          />
+          <div className="setting-inline">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(settings.sfx_volume * 100)}
+              onChange={(e) => set("sfx_volume", Number(e.target.value) / 100)}
+            />
+            <small>{Math.round(settings.sfx_volume * 100)}%</small>
+          </div>
         </label>
       </section>
 
@@ -120,18 +182,33 @@ function SettingsScreen({
 
       <section className="settings-block">
         <h3>Data</h3>
+        <p className="settings-muted">Destructive actions require confirmation.</p>
         <label className="setting-row">
-          <span>Reset on Start</span>
+          <span>Reset on Next Launch</span>
           <input type="checkbox" checked={settings.reset_on_start} onChange={(e) => set("reset_on_start", e.target.checked)} />
         </label>
         <div className="settings-actions">
-          <button type="button" onClick={onResetStats}>Reset Stats</button>
-          <button type="button" onClick={onResetAchievements}>Reset Achievements</button>
-          <button type="button" onClick={onResetAll}>Full Wipe</button>
+          <button type="button" onClick={() => setPendingAction("stats")}>Reset Stats</button>
+          <button type="button" onClick={() => setPendingAction("achievements")}>Reset Achievements</button>
+          <button type="button" className="danger" onClick={() => setPendingAction("all")}>Full Wipe</button>
         </div>
       </section>
 
       <button type="button" onClick={onBack}>Back to Menu</button>
+
+      {pendingAction && (
+        <div className="settings-confirm-backdrop" onClick={() => setPendingAction(null)}>
+          <div className="settings-confirm-card" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h3>Confirm Action</h3>
+            <p>{actionMessage}</p>
+            <p className="settings-muted">This cannot be undone.</p>
+            <div className="settings-actions">
+              <button type="button" onClick={() => setPendingAction(null)}>Cancel</button>
+              <button type="button" className="danger" onClick={runPendingAction}>Confirm</button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

@@ -15,6 +15,8 @@ type Castling = { K: boolean; Q: boolean; k: boolean; q: boolean };
 type GameMode = "1p" | "2p";
 type Difficulty = "easy" | "medium" | "hard";
 type Phase = "select" | "game";
+type PromotionPiece = "Q" | "R" | "B" | "N";
+type MoveSpecial = "ck" | "cq" | "ep" | "promo" | null;
 
 interface ChessState {
   board: Board;
@@ -26,11 +28,16 @@ interface ChessState {
   lastMove: { from: Square; to: Square } | null;
   winner: "white" | "black" | null;
   stalemate: boolean;
+  moveHistory: string[];
+  capturedByWhite: string[];
+  capturedByBlack: string[];
+  pendingPromotion: { from: Square; to: Square; white: boolean } | null;
 }
 
 const SAVE_KEY = "arcade.chess.autosave.v2";
 const DIFF_DEPTH: Record<Difficulty, number> = { easy: 1, medium: 2, hard: 3 };
 const PIECE_VALUE: Record<string, number> = { P: 100, N: 320, B: 330, R: 500, Q: 900, K: 0 };
+const PROMOTION_OPTIONS: PromotionPiece[] = ["Q", "R", "B", "N"];
 
 function ChessGame({ onExit, controlScheme }: ChessGameProps) {
   const session = useGameSession("chess");
@@ -38,12 +45,21 @@ function ChessGame({ onExit, controlScheme }: ChessGameProps) {
   const [mode, setMode] = useState<GameMode>("1p");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
   const [state, setState] = useState<ChessState>(() => loadState());
+  const promoteWith = (piece: PromotionPiece) => {
+    setState((prev) => {
+      if (!prev.pendingPromotion) return prev;
+      const { from, to } = prev.pendingPromotion;
+      return applyFullMove({ ...prev, pendingPromotion: null, selected: null, legal: [] }, from, to, piece);
+    });
+  };
 
   const statusText = useMemo(() => {
     if (state.winner) return `${state.winner === "white" ? "White" : "Black"} wins`;
     if (state.stalemate) return "Stalemate";
+    if (state.pendingPromotion) return `${state.pendingPromotion.white ? "White" : "Black"} promoting`;
+    if (inCheck(state.board, state.whiteTurn)) return `${state.whiteTurn ? "White" : "Black"} to move (check)`;
     return `${state.whiteTurn ? "White" : "Black"} to move`;
-  }, [state.stalemate, state.whiteTurn, state.winner]);
+  }, [state.board, state.pendingPromotion, state.stalemate, state.whiteTurn, state.winner]);
 
   const exitToMenu = () => {
     session.recordPlaytimeOnly();
@@ -77,39 +93,50 @@ function ChessGame({ onExit, controlScheme }: ChessGameProps) {
   useEffect(() => {
     if (phase !== "game") return;
     if (mode !== "1p" || state.winner || state.stalemate || state.whiteTurn) return;
+    if (state.pendingPromotion) return;
     const id = window.setTimeout(() => {
       const move = pickAiMove(state, DIFF_DEPTH[difficulty]);
       if (!move) return;
       setState((prev) => applyFullMove(prev, move.from, move.to));
     }, 120);
     return () => window.clearTimeout(id);
-  }, [difficulty, mode, phase, state]);
+  }, [difficulty, mode, phase, state, state.pendingPromotion]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "q" || e.key === "Escape") {
-        if (phase === "select") exitToMenu();
-        else setPhase("select");
-        return;
-      }
+      const key = e.key.toLowerCase();
       if (phase === "select") {
-        if (e.key === "1") {
+        if (key === "q" || key === "escape") {
+          exitToMenu();
+          return;
+        }
+        if (key === "1") {
           setMode("1p");
           setPhase("game");
           resetGame();
         }
-        if (e.key === "2") {
+        if (key === "2") {
           setMode("2p");
           setPhase("game");
           resetGame();
         }
         return;
       }
-      if (e.key === "r") resetGame();
+
+      if (state.pendingPromotion) {
+        if (key === "q" || key === "r" || key === "b" || key === "n") promoteWith(key.toUpperCase() as PromotionPiece);
+        if (key === "enter") promoteWith("Q");
+        return;
+      }
+      if (key === "q" || key === "escape") {
+        setPhase("select");
+        return;
+      }
+      if (key === "r") resetGame();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase]);
+  }, [phase, state.pendingPromotion]);
 
   if (phase === "select") {
     return (
@@ -154,27 +181,81 @@ function ChessGame({ onExit, controlScheme }: ChessGameProps) {
         {mode === "1p" && <span>AI: {difficulty}</span>}
       </div>
 
-      <div className="chess-board">
-        {state.board.flatMap((row, r) =>
-          row.map((piece, c) => {
-            const dark = (r + c) % 2 === 1;
-            const selected = state.selected?.[0] === r && state.selected?.[1] === c;
-            const legal = state.legal.some(([rr, cc]) => rr === r && cc === c);
-            const last = state.lastMove && ((state.lastMove.from[0] === r && state.lastMove.from[1] === c) || (state.lastMove.to[0] === r && state.lastMove.to[1] === c));
-            return (
-              <button
-                key={`${r}-${c}`}
-                type="button"
-                className={`chess-cell ${dark ? "dark" : "light"} ${selected ? "sel" : ""} ${legal ? "legal" : ""} ${last ? "last" : ""}`}
-                onClick={() => {
-                  setState((prev) => clickSquare(prev, [r, c], mode));
-                }}
-              >
-                {pieceGlyph(piece)}
-              </button>
-            );
-          })
-        )}
+      <div className="chess-layout">
+        <div className="chess-board-wrap">
+          <div className="chess-board">
+            {state.board.flatMap((row, r) =>
+              row.map((piece, c) => {
+                const dark = (r + c) % 2 === 1;
+                const selected = state.selected?.[0] === r && state.selected?.[1] === c;
+                const legal = state.legal.some(([rr, cc]) => rr === r && cc === c);
+                const last = state.lastMove && ((state.lastMove.from[0] === r && state.lastMove.from[1] === c) || (state.lastMove.to[0] === r && state.lastMove.to[1] === c));
+                return (
+                  <button
+                    key={`${r}-${c}`}
+                    type="button"
+                    className={`chess-cell ${dark ? "dark" : "light"} ${selected ? "sel" : ""} ${legal ? "legal" : ""} ${last ? "last" : ""}`}
+                    onClick={() => {
+                      setState((prev) => clickSquare(prev, [r, c], mode));
+                    }}
+                  >
+                    {pieceGlyph(piece)}
+                  </button>
+                );
+              })
+            )}
+          </div>
+          {state.pendingPromotion && (
+            <div className="chess-promo">
+              <span>Choose promotion piece</span>
+              <div className="chess-promo-options">
+                {PROMOTION_OPTIONS.map((piece) => (
+                  <button key={piece} type="button" onClick={() => promoteWith(piece)}>
+                    {pieceGlyph(state.pendingPromotion?.white ? piece : piece.toLowerCase())} {piece}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <aside className="chess-side-panels">
+          <section className="chess-panel">
+            <h2>Captured by White</h2>
+            <div className="chess-captured">
+              {state.capturedByWhite.length === 0 ? (
+                <span className="empty">None</span>
+              ) : state.capturedByWhite.map((piece, i) => (
+                <span key={`${piece}-${i}`} aria-label={piece}>{pieceGlyph(piece)}</span>
+              ))}
+            </div>
+          </section>
+
+          <section className="chess-panel">
+            <h2>Captured by Black</h2>
+            <div className="chess-captured">
+              {state.capturedByBlack.length === 0 ? (
+                <span className="empty">None</span>
+              ) : state.capturedByBlack.map((piece, i) => (
+                <span key={`${piece}-${i}`} aria-label={piece}>{pieceGlyph(piece)}</span>
+              ))}
+            </div>
+          </section>
+
+          <section className="chess-panel chess-history">
+            <h2>Move History</h2>
+            <ul className="chess-history-list">
+              {state.moveHistory.length === 0 ? (
+                <li className="empty">No moves yet</li>
+              ) : state.moveHistory.map((mv, i) => (
+                <li key={`${mv}-${i}`}>
+                  <span className="ply">{Math.floor(i / 2) + 1}{i % 2 === 0 ? "." : "..."}</span>
+                  <span>{mv}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </aside>
       </div>
 
       {controlScheme === "buttons" && (
@@ -191,6 +272,7 @@ function ChessGame({ onExit, controlScheme }: ChessGameProps) {
 
 function clickSquare(state: ChessState, sq: Square, mode: GameMode): ChessState {
   if (state.winner || state.stalemate) return state;
+  if (state.pendingPromotion) return state;
   const [r, c] = sq;
   const piece = state.board[r][c];
   const whiteSide = state.whiteTurn;
@@ -214,13 +296,31 @@ function clickSquare(state: ChessState, sq: Square, mode: GameMode): ChessState 
   return state;
 }
 
-function applyFullMove(state: ChessState, from: Square, to: Square): ChessState {
+function applyFullMove(state: ChessState, from: Square, to: Square, promotionPiece?: PromotionPiece): ChessState {
   const moving = state.board[from[0]][from[1]];
   if (!moving) return state;
-  const { board, ep, castling } = applyMove(state.board, from, to, moving, state.castling, state.ep);
+  if (moving.toUpperCase() === "P" && (to[0] === 0 || to[0] === 7) && !promotionPiece) {
+    return {
+      ...state,
+      selected: null,
+      legal: [],
+      pendingPromotion: { from, to, white: isWhite(moving) }
+    };
+  }
+  const { board, ep, castling, captured, special } = applyMove(state.board, from, to, moving, state.castling, state.ep, promotionPiece);
   const whiteTurn = !state.whiteTurn;
   const legalForNext = allLegalMoves(board, whiteTurn, castling, ep);
   const inChk = inCheck(board, whiteTurn);
+  const isMate = legalForNext.length === 0 && inChk;
+  const isStalemate = legalForNext.length === 0 && !inChk;
+  const suffix = isMate ? "#" : inChk ? "+" : "";
+  const notation = moveNotation(state.board, from, to, moving, captured, special, promotionPiece, suffix);
+  const capturedByWhite = [...state.capturedByWhite];
+  const capturedByBlack = [...state.capturedByBlack];
+  if (captured) {
+    if (state.whiteTurn) capturedByWhite.push(captured);
+    else capturedByBlack.push(captured);
+  }
   return {
     board,
     ep,
@@ -229,8 +329,12 @@ function applyFullMove(state: ChessState, from: Square, to: Square): ChessState 
     selected: null,
     legal: [],
     lastMove: { from, to },
-    winner: legalForNext.length === 0 && inChk ? (whiteTurn ? "black" : "white") : null,
-    stalemate: legalForNext.length === 0 && !inChk
+    winner: isMate ? (whiteTurn ? "black" : "white") : null,
+    stalemate: isStalemate,
+    moveHistory: [...state.moveHistory, notation],
+    capturedByWhite,
+    capturedByBlack,
+    pendingPromotion: null
   };
 }
 
@@ -244,7 +348,11 @@ function freshState(): ChessState {
     legal: [],
     lastMove: null,
     winner: null,
-    stalemate: false
+    stalemate: false,
+    moveHistory: [],
+    capturedByWhite: [],
+    capturedByBlack: [],
+    pendingPromotion: null
   };
 }
 
@@ -253,7 +361,10 @@ function loadState(): ChessState {
   if (!raw) return freshState();
   try {
     const parsed = JSON.parse(raw) as Partial<ChessState>;
-    if (!parsed.board || parsed.board.length !== 8) return freshState();
+    if (!isValidBoard(parsed.board)) return freshState();
+    const moveHistory = Array.isArray(parsed.moveHistory) ? parsed.moveHistory.filter((m): m is string => typeof m === "string") : [];
+    const capturedByWhite = Array.isArray(parsed.capturedByWhite) ? parsed.capturedByWhite.filter((p): p is string => typeof p === "string") : [];
+    const capturedByBlack = Array.isArray(parsed.capturedByBlack) ? parsed.capturedByBlack.filter((p): p is string => typeof p === "string") : [];
     return {
       board: parsed.board,
       whiteTurn: Boolean(parsed.whiteTurn),
@@ -263,7 +374,11 @@ function loadState(): ChessState {
       legal: [],
       lastMove: parsed.lastMove ?? null,
       winner: parsed.winner ?? null,
-      stalemate: Boolean(parsed.stalemate)
+      stalemate: Boolean(parsed.stalemate),
+      moveHistory,
+      capturedByWhite,
+      capturedByBlack,
+      pendingPromotion: null
     };
   } catch {
     return freshState();
@@ -278,7 +393,10 @@ function saveState(state: ChessState): void {
     ep: state.ep,
     lastMove: state.lastMove,
     winner: state.winner,
-    stalemate: state.stalemate
+    stalemate: state.stalemate,
+    moveHistory: state.moveHistory,
+    capturedByWhite: state.capturedByWhite,
+    capturedByBlack: state.capturedByBlack
   }));
 }
 
@@ -415,17 +533,28 @@ function allLegalMoves(board: Board, white: boolean, castling: Castling, ep: Squ
   return all;
 }
 
-function applyMove(board: Board, from: Square, to: Square, moving: string, castling: Castling, ep: Square | null): { board: Board; castling: Castling; ep: Square | null } {
+function applyMove(
+  board: Board,
+  from: Square,
+  to: Square,
+  moving: string,
+  castling: Castling,
+  ep: Square | null,
+  promotionPiece: PromotionPiece = "Q"
+): { board: Board; castling: Castling; ep: Square | null; captured: string | null; special: MoveSpecial } {
   const next = board.map((row) => [...row]);
   const outCastling = { ...castling };
   const [fr, fc] = from;
   const [tr, tc] = to;
   const white = isWhite(moving);
-  const captured = next[tr][tc];
+  let captured = next[tr][tc];
+  let special: MoveSpecial = null;
 
   // en passant capture
   if (moving.toUpperCase() === "P" && ep && tr === ep[0] && tc === ep[1] && !captured) {
+    captured = next[fr][tc];
     next[fr][tc] = null;
+    special = "ep";
   }
 
   next[fr][fc] = null;
@@ -436,15 +565,18 @@ function applyMove(board: Board, from: Square, to: Square, moving: string, castl
     if (tc === 6) {
       next[tr][5] = next[tr][7];
       next[tr][7] = null;
+      special = "ck";
     } else {
       next[tr][3] = next[tr][0];
       next[tr][0] = null;
+      special = "cq";
     }
   }
 
   // promotion
   if (moving.toUpperCase() === "P" && (tr === 0 || tr === 7)) {
-    next[tr][tc] = white ? "Q" : "q";
+    next[tr][tc] = white ? promotionPiece : promotionPiece.toLowerCase();
+    special = "promo";
   }
 
   // castling rights update
@@ -464,7 +596,41 @@ function applyMove(board: Board, from: Square, to: Square, moving: string, castl
     nextEp = [Math.floor((fr + tr) / 2), fc];
   }
 
-  return { board: next, castling: outCastling, ep: nextEp };
+  return { board: next, castling: outCastling, ep: nextEp, captured, special };
+}
+
+function squareName([r, c]: Square): string {
+  return `${"abcdefgh"[c]}${"87654321"[r]}`;
+}
+
+function moveNotation(
+  board: Board,
+  from: Square,
+  to: Square,
+  moving: string,
+  captured: string | null,
+  special: MoveSpecial,
+  promotionPiece: PromotionPiece | undefined,
+  suffix: string
+): string {
+  const [, fc] = from;
+  const [, tc] = to;
+  const target = squareName(to);
+  if (special === "ck") return `O-O${suffix}`;
+  if (special === "cq") return `O-O-O${suffix}`;
+  if (moving.toUpperCase() === "P") {
+    const capture = Boolean(captured) || fc !== tc;
+    let san = capture ? `${"abcdefgh"[fc]}x${target}` : target;
+    if (special === "promo") san += `=${(promotionPiece ?? "Q").toUpperCase()}`;
+    return `${san}${suffix}`;
+  }
+  const capture = Boolean(captured) || board[to[0]][to[1]] !== null;
+  return `${moving.toUpperCase()}${capture ? "x" : ""}${target}${suffix}`;
+}
+
+function isValidBoard(board: unknown): board is Board {
+  if (!Array.isArray(board) || board.length !== 8) return false;
+  return board.every((row) => Array.isArray(row) && row.length === 8 && row.every((cell) => cell === null || typeof cell === "string"));
 }
 
 function materialScore(board: Board): number {
